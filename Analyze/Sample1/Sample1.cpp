@@ -9,7 +9,7 @@ file.
 
 Notes for use in a new project:
 	-you need to include "MACLib.lib" in the included libraries list
-	-life will be easier if you set the [MAC SDK]\\Shared directory as an include 
+	-life will be easier if you set the [MAC SDK]\\Shared directory as an include
 	directory and an additional library input path in the project settings
 	-set the runtime library to "Mutlithreaded"
 
@@ -20,17 +20,17 @@ WARNING:
 ***************************************************************************************/
 
 // includes
-#include "all.h"
+#include "All.h"
 #include "stdio.h"
-#include "maclib.h"
-#include "apetag.h"
+#include "MACLib.h"
+#include "APETag.h"
 
-int main(int argc, char* argv[]) 
+int main(int argc, char* argv[])
 {
 	///////////////////////////////////////////////////////////////////////////////
 	// error check the command line parameters
 	///////////////////////////////////////////////////////////////////////////////
-	if (argc != 2) 
+	if (argc != 2)
 	{
 		printf("~~~Improper Usage~~~\r\n\r\n");
 		printf("Usage Example: Sample 1.exe 'c:\\1.ape'\r\n\r\n");
@@ -44,12 +44,12 @@ int main(int argc, char* argv[])
 	char				cTempBuffer[256]; ZeroMemory(&cTempBuffer[0], 256);	// generic buffer for string stuff
 	char *				pFilename = argv[1];								// the file to open
 	IAPEDecompress *	pAPEDecompress = NULL;								// APE interface
-		
+
 	///////////////////////////////////////////////////////////////////////////////
 	// open the file and error check
 	///////////////////////////////////////////////////////////////////////////////
 	pAPEDecompress = CreateIAPEDecompress(pFilename, &nRetVal);
-	if (pAPEDecompress == NULL) 
+	if (pAPEDecompress == NULL)
 	{
 		printf("Error opening APE file. (error code %d)\r\n\r\n", nRetVal);
 		return 0;
@@ -82,14 +82,14 @@ int main(int argc, char* argv[])
 	printf("Size and Duration:\r\n");
 	printf("\tLength of file (s): %d\r\n", pAPEDecompress->GetInfo(APE_INFO_LENGTH_MS) / 1000);
 	printf("\tFile Size (kb): %d\r\n\r\n", pAPEDecompress->GetInfo(APE_INFO_APE_TOTAL_BYTES) / 1024);
-	
+
 	// tag information
 	printf("Tag Information:\r\n");
-	
+
 	CAPETag * pAPETag = (CAPETag *) pAPEDecompress->GetInfo(APE_INFO_TAG);
 	BOOL bHasID3Tag = pAPETag->GetHasID3Tag();
 	BOOL bHasAPETag = pAPETag->GetHasAPETag();
-	
+
 	if (bHasID3Tag || bHasAPETag)
 	{
 		// iterate through all the tag fields
@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
 		while (pAPETag->GetNextTagField(bFirst, &pTagField))
 		{
 			bFirst = FALSE;
-			
+
 			// output the tag field properties (don't output huge fields like images, etc.)
 			if (pTagField->GetFieldValueSize() > 128)
 			{
@@ -110,11 +110,11 @@ int main(int argc, char* argv[])
 			}
 		}
 	}
-	else 
+	else
 	{
 		printf("\tNot tagged\r\n\r\n");
 	}
-	
+
 	///////////////////////////////////////////////////////////////////////////////
 	// cleanup (just delete the object
 	///////////////////////////////////////////////////////////////////////////////
