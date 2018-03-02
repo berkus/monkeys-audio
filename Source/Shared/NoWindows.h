@@ -4,10 +4,12 @@
 
 // we treat bool as a global type, so don't declare it in the namespace
 #ifdef PLATFORM_APPLE
-	typedef signed char BOOL;  // this is the way it's defined in Obj-C
+	typedef bool BOOL;  // this is the way it's defined in Obj-C
 #else
-	typedef unsigned char BOOL; // this is the way it's defined in X11
+	typedef bool BOOL; // this is the way it's defined in X11
 #endif
+#define FALSE false
+#define TRUE true
 
 namespace APE
 {
@@ -34,7 +36,8 @@ typedef long                LRESULT;
 
 #define CALLBACK
 
-#define _T(x) L ## x
+#define _T(x) x
+using TCHAR = char;
 
 #define _strnicmp strncasecmp
 #define _wtoi(x) wcstol(x, NULL, 10)
