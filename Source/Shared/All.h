@@ -2,7 +2,7 @@
 
 /*****************************************************************************************
 Platform
- 
+
 One of the following platforms should be defined (either in code or as a project setting):
 PLATFORM_WINDOWS
 PLATFORM_APPLE
@@ -37,7 +37,6 @@ Global includes
     #include "NoWindows.h"
 #endif
 #define ape_max(a,b)    (((a) > (b)) ? (a) : (b))
-#define ape_min(a,b)    (((a) < (b)) ? (a) : (b))
 
 #include "SmartPtr.h"
 
@@ -103,7 +102,7 @@ namespace APE
     #else
     	typedef int64_t intn;
     	typedef uint64_t uintn;
-    #endif    
+    #endif
 #else
     typedef int32_t intn;
     typedef uint32_t uintn;
@@ -115,7 +114,7 @@ namespace APE
 	typedef int16_t                                     int16;
 	typedef uint8_t                                     uint8;
 	typedef int8_t                                      int8;
-	
+
 	// string types
 	typedef char                                        str_ansi;
 	typedef unsigned char                               str_utf8;
@@ -142,7 +141,7 @@ Global macros
         #if defined(_DEBUG)
             #define ASSERT(e)                            assert(e)
         #else
-            #define ASSERT(e)                            
+            #define ASSERT(e)
         #endif
     #endif
 #else
@@ -157,7 +156,7 @@ Global macros
     #define TICK_COUNT_TYPE                             unsigned long long
     #define TICK_COUNT_READ(VARIABLE)                   { struct timeval t; gettimeofday(&t, NULL); VARIABLE = t.tv_sec * 1000000LLU + t.tv_usec; }
     #define TICK_COUNT_FREQ                             1000000
-    #define ASSERT(e)                                    
+    #define ASSERT(e)
 #endif
 
 /*****************************************************************************************

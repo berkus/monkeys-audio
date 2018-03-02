@@ -4,6 +4,7 @@
 #include "Prepare.h"
 #include "UnBitArray.h"
 #include "NewPredictor.h"
+#include <algorithm>
 
 namespace APE
 {
@@ -38,8 +39,8 @@ CAPEDecompress::CAPEDecompress(int * pErrorCode, CAPEInfo * pAPEInfo, int nStart
     m_nErrorDecodingCurrentFrameOutputSilenceBlocks = 0;
 
     // set the "real" start and finish blocks
-    m_nStartBlock = (nStartBlock < 0) ? 0 : ape_min(nStartBlock, (int)GetInfo(APE_INFO_TOTAL_BLOCKS));
-    m_nFinishBlock = (nFinishBlock < 0) ? GetInfo(APE_INFO_TOTAL_BLOCKS) : ape_min(nFinishBlock, (int)GetInfo(APE_INFO_TOTAL_BLOCKS));
+    m_nStartBlock = (nStartBlock < 0) ? 0 : std::min(nStartBlock, (int)GetInfo(APE_INFO_TOTAL_BLOCKS));
+    m_nFinishBlock = (nFinishBlock < 0) ? GetInfo(APE_INFO_TOTAL_BLOCKS) : std::min(nFinishBlock, (int)GetInfo(APE_INFO_TOTAL_BLOCKS));
     m_bIsRanged = (m_nStartBlock != 0) || (m_nFinishBlock != GetInfo(APE_INFO_TOTAL_BLOCKS));
 }
 
@@ -58,7 +59,7 @@ int CAPEDecompress::InitializeDecompressor()
 
     // create a frame buffer
     m_cbFrameBuffer.CreateBuffer((GetInfo(APE_INFO_BLOCKS_PER_FRAME) + DECODE_BLOCK_SIZE) * m_nBlockAlign, m_nBlockAlign * 64);
-    
+
     // create decoding components
     m_spUnBitArray.Assign((CUnBitArrayBase *) CreateUnBitArray(this, GetInfo(APE_INFO_FILE_VERSION)));
     if (m_spUnBitArray == NULL)
@@ -74,7 +75,7 @@ int CAPEDecompress::InitializeDecompressor()
         m_spNewPredictorX.Assign(new CPredictorDecompressNormal3930to3950(GetInfo(APE_INFO_COMPRESSION_LEVEL), GetInfo(APE_INFO_FILE_VERSION)));
         m_spNewPredictorY.Assign(new CPredictorDecompressNormal3930to3950(GetInfo(APE_INFO_COMPRESSION_LEVEL), GetInfo(APE_INFO_FILE_VERSION)));
     }
-    
+
     // seek to the beginning
     return Seek(0);
 }
@@ -83,14 +84,14 @@ int CAPEDecompress::GetData(char * pBuffer, intn nBlocks, intn * pBlocksRetrieve
 {
     int nResult = ERROR_SUCCESS;
     if (pBlocksRetrieved) *pBlocksRetrieved = 0;
-    
+
     // make sure we're initialized
     RETURN_ON_ERROR(InitializeDecompressor())
 
     // cap
     intn nBlocksUntilFinish = m_nFinishBlock - m_nCurrentBlock;
-    const intn nBlocksToRetrieve = ape_min(nBlocks, nBlocksUntilFinish);
-    
+    const intn nBlocksToRetrieve = std::min(nBlocks, nBlocksUntilFinish);
+
     // get the data
     unsigned char * pOutputBuffer = (unsigned char *) pBuffer;
     intn nBlocksLeft = nBlocksToRetrieve; intn nBlocksThisPass = 1;
@@ -103,7 +104,7 @@ int CAPEDecompress::GetData(char * pBuffer, intn nBlocks, intn * pBlocksRetrieve
 
         // analyze how much to remove from the buffer
         const intn nFrameBufferBlocks = m_nFrameBufferFinishedBlocks;
-        nBlocksThisPass = ape_min(nBlocksLeft, nFrameBufferBlocks);
+        nBlocksThisPass = std::min(nBlocksLeft, nFrameBufferBlocks);
 
         // remove as much as possible
         if (nBlocksThisPass > 0)
@@ -131,7 +132,7 @@ int CAPEDecompress::Seek(intn nBlockOffset)
 
     // use the offset
     nBlockOffset += m_nStartBlock;
-    
+
     // cap (to prevent seeking too far)
     if (nBlockOffset >= m_nFinishBlock)
         nBlockOffset = m_nFinishBlock - 1;
@@ -142,7 +143,7 @@ int CAPEDecompress::Seek(intn nBlockOffset)
 	intn nBaseFrame = nBlockOffset / GetInfo(APE_INFO_BLOCKS_PER_FRAME);
 	intn nBlocksToSkip = nBlockOffset % GetInfo(APE_INFO_BLOCKS_PER_FRAME);
 	intn nBytesToSkip = nBlocksToSkip * m_nBlockAlign;
-        
+
     m_nCurrentBlock = nBaseFrame * GetInfo(APE_INFO_BLOCKS_PER_FRAME);
     m_nCurrentFrameBufferBlock = nBaseFrame * GetInfo(APE_INFO_BLOCKS_PER_FRAME);
     m_nCurrentFrame = nBaseFrame;
@@ -153,7 +154,7 @@ int CAPEDecompress::Seek(intn nBlockOffset)
     // skip necessary blocks
     CSmartPtr<char> spTempBuffer(new char [nBytesToSkip], true);
     if (spTempBuffer == NULL) return ERROR_INSUFFICIENT_MEMORY;
-    
+
 	intn nBlocksRetrieved = 0;
     GetData(spTempBuffer, nBlocksToSkip, &nBlocksRetrieved);
     if (nBlocksRetrieved != nBlocksToSkip)
@@ -183,7 +184,7 @@ int CAPEDecompress::FillFrameBuffer()
         if (m_nErrorDecodingCurrentFrameOutputSilenceBlocks > 0)
         {
             // output silence
-			intn nOutputSilenceBlocks = ape_min(m_nErrorDecodingCurrentFrameOutputSilenceBlocks, nBlocksLeft);
+			intn nOutputSilenceBlocks = std::min(m_nErrorDecodingCurrentFrameOutputSilenceBlocks, nBlocksLeft);
             unsigned char cSilence = (GetInfo(APE_INFO_BITS_PER_SAMPLE) == 8) ? 127 : 0;
             for (int z = 0; z < nOutputSilenceBlocks * m_nBlockAlign; z++)
             {
@@ -208,7 +209,7 @@ int CAPEDecompress::FillFrameBuffer()
         // analyze
 		intn nFrameOffsetBlocks = m_nCurrentFrameBufferBlock % GetInfo(APE_INFO_BLOCKS_PER_FRAME);
 		intn nFrameBlocksLeft = nFrameBlocks - nFrameOffsetBlocks;
-		intn nBlocksThisPass = ape_min(nFrameBlocksLeft, nBlocksLeft);
+		intn nBlocksThisPass = std::min(nFrameBlocksLeft, nBlocksLeft);
 
         // start the frame if we need to
         if (nFrameOffsetBlocks == 0)
@@ -216,7 +217,7 @@ int CAPEDecompress::FillFrameBuffer()
 
         // decode data
         DecodeBlocksToFrameBuffer(nBlocksThisPass);
-            
+
         // end the frame if we decoded all the blocks from the current frame
         bool bEndedFrame = false;
         if ((nFrameOffsetBlocks + nBlocksThisPass) >= nFrameBlocks)
@@ -230,10 +231,10 @@ int CAPEDecompress::FillFrameBuffer()
         {
 			intn nFrameBlocksDecoded = 0;
             if (bEndedFrame)
-            {   
+            {
                 // remove the frame buffer blocks that have been marked as good
                 m_nFrameBufferFinishedBlocks -= GetInfo(APE_INFO_FRAME_BLOCKS, m_nCurrentFrame - 1);
-                
+
                 // assume that the frame buffer contains the correct number of blocks for the entire frame
                 nFrameBlocksDecoded = GetInfo(APE_INFO_FRAME_BLOCKS, m_nCurrentFrame - 1);
             }
@@ -283,8 +284,8 @@ void CAPEDecompress::DecodeBlocksToFrameBuffer(intn nBlocks)
     {
         if (m_wfeInput.nChannels == 2)
         {
-            if ((m_nSpecialCodes & SPECIAL_FRAME_LEFT_SILENCE) && 
-                (m_nSpecialCodes & SPECIAL_FRAME_RIGHT_SILENCE)) 
+            if ((m_nSpecialCodes & SPECIAL_FRAME_LEFT_SILENCE) &&
+                (m_nSpecialCodes & SPECIAL_FRAME_RIGHT_SILENCE))
             {
                 for (nBlocksProcessed = 0; nBlocksProcessed < nBlocks; nBlocksProcessed++)
                 {
@@ -300,7 +301,7 @@ void CAPEDecompress::DecodeBlocksToFrameBuffer(intn nBlocks)
                     m_Prepare.Unprepare(X, 0, &m_wfeInput, m_cbFrameBuffer.GetDirectWritePointer(), &m_nCRC);
                     m_cbFrameBuffer.UpdateAfterDirectWrite(m_nBlockAlign);
                 }
-            }    
+            }
             else
             {
                 if (m_spAPEInfo->GetInfo(APE_INFO_FILE_VERSION) >= 3950)
@@ -323,7 +324,7 @@ void CAPEDecompress::DecodeBlocksToFrameBuffer(intn nBlocks)
                     {
                         int X = m_spNewPredictorX->DecompressValue(m_spUnBitArray->DecodeValueRange(m_BitArrayStateX));
                         int Y = m_spNewPredictorY->DecompressValue(m_spUnBitArray->DecodeValueRange(m_BitArrayStateY));
-                        
+
                         m_Prepare.Unprepare(X, Y, &m_wfeInput, m_cbFrameBuffer.GetDirectWritePointer(), &m_nCRC);
                         m_cbFrameBuffer.UpdateAfterDirectWrite(m_nBlockAlign);
                     }
@@ -368,7 +369,7 @@ void CAPEDecompress::DecodeBlocksToFrameBuffer(intn nBlocks)
 void CAPEDecompress::StartFrame()
 {
     m_nCRC = 0xFFFFFFFF;
-    
+
     // get the frame header
     m_nStoredCRC = m_spUnBitArray->DecodeValue(DECODE_VALUE_METHOD_UNSIGNED_INT);
     m_bErrorDecodingCurrentFrame = false;
@@ -378,7 +379,7 @@ void CAPEDecompress::StartFrame()
     m_nSpecialCodes = 0;
     if (GET_USES_SPECIAL_FRAMES(m_spAPEInfo))
     {
-        if (m_nStoredCRC & 0x80000000) 
+        if (m_nStoredCRC & 0x80000000)
         {
             m_nSpecialCodes = m_spUnBitArray->DecodeValue(DECODE_VALUE_METHOD_UNSIGNED_INT);
         }
@@ -514,7 +515,7 @@ intn CAPEDecompress::GetInfo(APE_DECOMPRESS_FIELDS Field, intn nParam1, intn nPa
         {
             char * pBuffer = (char *) nParam1;
 			intn nMaxBytes = nParam2;
-            
+
             if (sizeof(WAVE_HEADER) > nMaxBytes)
             {
                 nResult = -1;
@@ -522,8 +523,8 @@ intn CAPEDecompress::GetInfo(APE_DECOMPRESS_FIELDS Field, intn nParam1, intn nPa
             else
             {
                 WAVEFORMATEX wfeFormat; GetInfo(APE_INFO_WAVEFORMATEX, (intn) &wfeFormat, 0);
-                WAVE_HEADER WAVHeader; FillWaveHeader(&WAVHeader, 
-                    (m_nFinishBlock - m_nStartBlock) * GetInfo(APE_INFO_BLOCK_ALIGN), 
+                WAVE_HEADER WAVHeader; FillWaveHeader(&WAVHeader,
+                    (m_nFinishBlock - m_nStartBlock) * GetInfo(APE_INFO_BLOCK_ALIGN),
                     &wfeFormat, 0);
                 memcpy(pBuffer, &WAVHeader, sizeof(WAVE_HEADER));
                 nResult = 0;
