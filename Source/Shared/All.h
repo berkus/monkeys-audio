@@ -60,7 +60,7 @@ Global compiler settings (useful for porting)
 // porting or third party usage, it's probably best to not bother with APE_BACKWARDS_COMPATIBILITY.
 // A future release of Monkey's Audio itself may remove support for these obsolete files.
 //#if defined(PLATFORM_WINDOWS)
-	#define APE_BACKWARDS_COMPATIBILITY
+//	#define APE_BACKWARDS_COMPATIBILITY
 //#endif
 
 // compression modes
