@@ -106,7 +106,7 @@ namespace APE
 
 CStdLibFileIO::CStdLibFileIO()
 {
-    memset(m_cFileName, 0, MAX_PATH);
+    memset(m_cFileName, 0, sizeof(m_cFileName));
     m_bReadOnly = false;
     m_pFile = NULL;
 }
@@ -121,7 +121,7 @@ int CStdLibFileIO::GetHandle()
     return FILENO(m_pFile);
 }
 
-int CStdLibFileIO::Open(const wchar_t * pName, bool bOpenReadOnly)
+int CStdLibFileIO::Open(const char * pName, bool bOpenReadOnly)
 {
     Close();
 
@@ -140,7 +140,7 @@ int CStdLibFileIO::Open(const wchar_t * pName, bool bOpenReadOnly)
         m_pFile = SETBINARY_OUT(stdout);
         m_bReadOnly = false;                                                    // WriteOnly
     }
-    else 
+    else
     {
         CSmartPtr<char> spFilenameUTF8((char *) CAPECharacterHelper::GetUTF8FromUTF16(pName), true);
         m_pFile = fopen(spFilenameUTF8, "r+b");
@@ -165,7 +165,7 @@ int CStdLibFileIO::Close()
 {
     int nResult = -1;
 
-    if (m_pFile != NULL) 
+    if (m_pFile != NULL)
     {
         nResult = fclose(m_pFile);
         m_pFile = NULL;
@@ -229,7 +229,7 @@ int CStdLibFileIO::Create(const wchar_t * pName)
         m_pFile = SETBINARY_OUT(stdout);
         m_bReadOnly = false;                            // WriteOnly
     }
-    else 
+    else
     {
         CSmartPtr<char> spFilenameUTF8((char *) CAPECharacterHelper::GetUTF8FromUTF16(pName), true);
 		// NOTE: on Mac OSX (BSD Unix), we MUST have "w+b" if we want to read & write, with other systems "wb" seems to be fine

@@ -16,25 +16,25 @@ namespace APE
 #endif
 
 class CIO
-{   
+{
 public:
     // construction / destruction
     CIO() { }
     virtual ~CIO() { };
 
     // open / close
-    virtual int Open(const wchar_t * pName, bool bOpenReadOnly = false) = 0;
+    virtual int Open(const char * pName, bool bOpenReadOnly = false) = 0;
     virtual int Close() = 0;
-    
+
     // read / write
     virtual int Read(void * pBuffer, unsigned int nBytesToRead, unsigned int * pBytesRead) = 0;
     virtual int Write(const void * pBuffer, unsigned int nBytesToWrite, unsigned int * pBytesWritten) = 0;
-    
+
     // seek
     virtual int Seek(intn nDistance, unsigned int nMoveMode) = 0;
-    
+
     // creation / destruction
-    virtual int Create(const wchar_t * pName) = 0;
+    virtual int Create(const char * pName) = 0;
     virtual int Delete() = 0;
 
     // other functions
@@ -43,7 +43,7 @@ public:
     // attributes
     virtual int GetPosition() = 0;
     virtual unsigned int GetSize() = 0;
-    virtual int GetName(wchar_t * pBuffer) = 0;
+    virtual int GetName(char * pBuffer) = 0;
 };
 
 }
