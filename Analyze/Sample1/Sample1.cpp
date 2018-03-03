@@ -21,9 +21,14 @@ WARNING:
 
 // includes
 #include "All.h"
-#include "stdio.h"
 #include "MACLib.h"
 #include "APETag.h"
+#include <string>
+#include <memory>
+#include <iostream>
+
+using namespace std;
+using namespace APE;
 
 int main(int argc, char* argv[])
 {
@@ -32,24 +37,23 @@ int main(int argc, char* argv[])
 	///////////////////////////////////////////////////////////////////////////////
 	if (argc != 2)
 	{
-		printf("~~~Improper Usage~~~\r\n\r\n");
-		printf("Usage Example: Sample 1.exe 'c:\\1.ape'\r\n\r\n");
-		return 0;
+		cerr << "~~~Improper Usage~~~\n\n"
+				"Usage Example: Sample 1.exe 'c:\\1.ape'\n" << endl;
+		return -1;
 	}
 
 	///////////////////////////////////////////////////////////////////////////////
 	// variable declares
 	///////////////////////////////////////////////////////////////////////////////
 	int					nRetVal = 0;										// generic holder for return values
-	char				cTempBuffer[256]; ZeroMemory(&cTempBuffer[0], 256);	// generic buffer for string stuff
+	char				cTempBuffer[256] = {};	// generic buffer for string stuff
 	char *				pFilename = argv[1];								// the file to open
-	IAPEDecompress *	pAPEDecompress = NULL;								// APE interface
 
 	///////////////////////////////////////////////////////////////////////////////
 	// open the file and error check
 	///////////////////////////////////////////////////////////////////////////////
-	pAPEDecompress = CreateIAPEDecompress(pFilename, &nRetVal);
-	if (pAPEDecompress == NULL)
+	std::unique_ptr<IAPEDecompress> pAPEDecompress(CreateIAPEDecompress(pFilename, &nRetVal));
+	if (pAPEDecompress == nullptr)
 	{
 		printf("Error opening APE file. (error code %d)\r\n\r\n", nRetVal);
 		return 0;
@@ -69,22 +73,23 @@ int main(int argc, char* argv[])
 		case COMPRESSION_LEVEL_NORMAL: printf("\tCompression level: Normal\r\n\r\n"); break;
 		case COMPRESSION_LEVEL_HIGH: printf("\tCompression level: High\r\n\r\n"); break;
 		case COMPRESSION_LEVEL_EXTRA_HIGH: printf("\tCompression level: Extra High\r\n\r\n"); break;
+		case COMPRESSION_LEVEL_INSANE: cout << "\tCompression level: Insane\n" << endl; break;
 	}
 
 	// audio format information
-	printf("Audio Format:\r\n");
-	printf("\tSamples per second: %d\r\n", pAPEDecompress->GetInfo(APE_INFO_SAMPLE_RATE));
-	printf("\tBits per sample: %d\r\n", pAPEDecompress->GetInfo(APE_INFO_BITS_PER_SAMPLE));
-	printf("\tNumber of channels: %d\r\n", pAPEDecompress->GetInfo(APE_INFO_CHANNELS));
-	printf("\tPeak level: %d\r\n\r\n", pAPEDecompress->GetInfo(APE_INFO_PEAK_LEVEL));
+	cout << "Audio Format:\n"
+		    "\tSamples per second: " << pAPEDecompress->GetInfo(APE_INFO_SAMPLE_RATE) << "\n"
+			"\tBits per sample: " << pAPEDecompress->GetInfo(APE_INFO_BITS_PER_SAMPLE) << "\n"
+			"\tNumber of channels: " << pAPEDecompress->GetInfo(APE_INFO_CHANNELS) << "\n"
+			"\tPeak level: " << pAPEDecompress->GetInfo(APE_INFO_PEAK_LEVEL) << "\n\n"
 
 	// size and duration information
-	printf("Size and Duration:\r\n");
-	printf("\tLength of file (s): %d\r\n", pAPEDecompress->GetInfo(APE_INFO_LENGTH_MS) / 1000);
-	printf("\tFile Size (kb): %d\r\n\r\n", pAPEDecompress->GetInfo(APE_INFO_APE_TOTAL_BYTES) / 1024);
+			"Size and Duration:\n"
+			"\tLength of file (s): " << pAPEDecompress->GetInfo(APE_INFO_LENGTH_MS) / 1000 << "\n"
+			"\tFile Size (kb): " << pAPEDecompress->GetInfo(APE_INFO_APE_TOTAL_BYTES) / 1024 << "\n\n"
 
 	// tag information
-	printf("Tag Information:\r\n");
+			"Tag Information:\n";
 
 	CAPETag * pAPETag = (CAPETag *) pAPEDecompress->GetInfo(APE_INFO_TAG);
 	BOOL bHasID3Tag = pAPETag->GetHasID3Tag();
@@ -93,35 +98,26 @@ int main(int argc, char* argv[])
 	if (bHasID3Tag || bHasAPETag)
 	{
 		// iterate through all the tag fields
-		BOOL bFirst = TRUE;
-		CAPETagField * pTagField;
-		while (pAPETag->GetNextTagField(bFirst, &pTagField))
+		int index = 0;
+		while (CAPETagField * pTagField = pAPETag->GetTagField(index))
 		{
-			bFirst = FALSE;
+			index += 1;
 
 			// output the tag field properties (don't output huge fields like images, etc.)
 			if (pTagField->GetFieldValueSize() > 128)
 			{
-				printf("\t%s: --- too much data to display ---\r\n", pTagField->GetFieldName());
+				cout << "\t" << pTagField->GetFieldName() << ": --- too much data to display ---\n";
 			}
 			else
 			{
-				printf("\t%s: %s\r\n", pTagField->GetFieldName(), pTagField->GetFieldValue());
+				cout << "\t" << pTagField->GetFieldName() << ": " << pTagField->GetFieldValue() << "\n";
 			}
 		}
 	}
 	else
 	{
-		printf("\tNot tagged\r\n\r\n");
+		cout << "\tNot tagged\n";
 	}
 
-	///////////////////////////////////////////////////////////////////////////////
-	// cleanup (just delete the object
-	///////////////////////////////////////////////////////////////////////////////
-	delete pAPEDecompress;
-
-	///////////////////////////////////////////////////////////////////////////////
-	// quit
-	///////////////////////////////////////////////////////////////////////////////
-	return 0;
+	cout << endl; // flush
 }
