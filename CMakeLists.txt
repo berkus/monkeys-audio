@@ -1,11 +1,13 @@
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project(monkeys-audio)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -pedantic -Wno-long-long")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_RELEASE} -O0")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+    set(CMAKE_CXX_FLAGS_DEBUG "-O0")
 endif(CMAKE_COMPILER_IS_GNUCXX OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 
 include(CheckFunctionExists)
@@ -31,15 +33,14 @@ if(HAVE_STDLIB_H AND HAVE_STDARG_H AND HAVE_STRING_H AND HAVE_FLOAT_H)
     set(STDC_HEADERS TRUE)
 endif(HAVE_STDLIB_H AND HAVE_STDARG_H AND HAVE_STRING_H AND HAVE_FLOAT_H)
 
-check_library_exists(rt nanosleep "" NANOSLEEP_IN_RT)
-if(NANOSLEEP_IN_RT)
-    set(NANOSLEEP_LIBRARY rt)
-else(NANOSLEEP_IN_RT)
-    check_library_exists(posix4 nanosleep "" NANOSLEEP_IN_POSIX4)
-    if(NANOSLEEP_IN_POSIX4)
-        set(NANOSLEEP_LIBRARY posix4)
-    endif(NANOSLEEP_IN_POSIX4)
-endif(NANOSLEEP_IN_RT)
+find_package(Threads)
+
+set(Boost_USE_STATIC_LIBS ON)
+find_package(Boost 1.66
+    REQUIRED
+    COMPONENTS
+        filesystem
+)
 
 if(NOT WIN32)
     set(BUILD_CROSS_PLATFORM TRUE)
@@ -56,8 +57,7 @@ set(SHARED_SOURCES
     Source/Shared/CircleBuffer.cpp
     Source/Shared/GlobalFunctions.cpp
     Source/Shared/MACUtils.cpp
-    Source/Shared/StdLibFileIO.cpp
-    Source/Shared/WinFileIO.cpp)
+    Source/Shared/StdLibFileIO.cpp)
 
 set(LIBMAC_SOURCES
     Source/MACLib/APECompress.cpp
@@ -67,7 +67,7 @@ set(LIBMAC_SOURCES
     Source/MACLib/APEHeader.cpp
     Source/MACLib/APEInfo.cpp
     Source/MACLib/APELink.cpp
-    Source/MACLib/APESimple.cpp
+    # Source/MACLib/APESimple.cpp
     Source/MACLib/APETag.cpp
     Source/MACLib/BitArray.cpp
     Source/MACLib/MACLib.cpp
@@ -103,7 +103,7 @@ add_library(libmac
     ${SHARED_SOURCES}
     ${LIBMAC_SOURCES})
 
-target_link_libraries(libmac ${NANOSLEEP_LIBRARY})
+target_link_libraries(libmac ${CMAKE_THREAD_LIBS_INIT} Boost::boost)
 
 set_target_properties(libmac PROPERTIES
     OUTPUT_NAME mac)
