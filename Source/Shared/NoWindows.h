@@ -47,9 +47,9 @@ using TCHAR = char;
 
 #define MAX_PATH    4096
 
+}
+
 #include <wctype.h>
 #include <string.h>
-
-}
 
 #endif // #ifndef _WIN32
