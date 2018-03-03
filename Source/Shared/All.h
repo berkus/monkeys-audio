@@ -36,7 +36,6 @@ Global includes
 	#include <wchar.h>
     #include "NoWindows.h"
 #endif
-#define ape_max(a,b)    (((a) > (b)) ? (a) : (b))
 
 #include "SmartPtr.h"
 

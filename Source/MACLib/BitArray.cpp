@@ -222,7 +222,7 @@ int CBitArray::EncodeValue(int nEncode, BIT_ARRAY_STATE & BitArrayState)
     nEncode = (nEncode > 0) ? nEncode * 2 - 1 : -nEncode * 2;
 
     // figure the pivot value
-    int nPivotValue = ape_max(BitArrayState.nKSum / 32, (uint32)1);
+    int nPivotValue = std::max(BitArrayState.nKSum / 32, (uint32)1);
     int nOverflow = nEncode / nPivotValue;
     int nBase = nEncode - (nOverflow * nPivotValue);
 

@@ -1,6 +1,7 @@
 #include "All.h"
 #include "MACProgressHelper.h"
 #include "MACLib.h"
+#include <algorithm>
 
 namespace APE
 {
@@ -30,7 +31,7 @@ void CMACProgressHelper::UpdateProgress(unsigned int nCurrentStep, bool bForceUp
         m_nCurrentStep = nCurrentStep;
 
     // figure the percentage done
-    float fPercentageDone = float(m_nCurrentStep) / float(ape_max(m_nTotalSteps, 1));
+    float fPercentageDone = float(m_nCurrentStep) / float(std::max(m_nTotalSteps, 1U));
     int nPercentageDone = (int) (fPercentageDone * 1000 * 100);
     if (nPercentageDone > 100000) nPercentageDone = 100000;
 

@@ -2,6 +2,7 @@
 #include "APEInfo.h"
 #include "UnBitArray.h"
 #include "BitArray.h"
+#include <algorithm>
 
 namespace APE
 {
@@ -50,11 +51,11 @@ unsigned int CUnBitArray::DecodeValue(DECODE_VALUE_METHOD DecodeMethod, int nPar
     case DECODE_VALUE_METHOD_UNSIGNED_INT:
         return DecodeValueXBits(32);
     }
-    
+
     return 0;
 }
 
-void CUnBitArray::GenerateArray(int * pOutputArray, int nElements, intn nBytesRequired) 
+void CUnBitArray::GenerateArray(int * pOutputArray, int nElements, intn nBytesRequired)
 {
     GenerateArrayRange(pOutputArray, nElements);
 }
@@ -72,7 +73,7 @@ inline uint32 CUnBitArray::DecodeByte()
 inline int CUnBitArray::RangeDecodeFast(int nShift)
 {
     while (m_RangeCoderInfo.range <= BOTTOM_VALUE)
-    {   
+    {
         m_RangeCoderInfo.buffer = (m_RangeCoderInfo.buffer << 8) | DecodeByte();
         m_RangeCoderInfo.low = (m_RangeCoderInfo.low << 8) | ((m_RangeCoderInfo.buffer >> 1) & 0xFF);
         m_RangeCoderInfo.range <<= 8;
@@ -84,7 +85,7 @@ inline int CUnBitArray::RangeDecodeFast(int nShift)
 
     // decode
     m_RangeCoderInfo.range = m_RangeCoderInfo.range >> nShift;
-    
+
     return m_RangeCoderInfo.low / m_RangeCoderInfo.range;
 }
 
@@ -92,7 +93,7 @@ inline int CUnBitArray::RangeDecodeFastWithUpdate(int nShift)
 {
 	// update range
 	while (m_RangeCoderInfo.range <= BOTTOM_VALUE)
-	{   
+	{
 		// if the decoder's range falls to zero, it means the input bitstream is corrupt
 		if (m_RangeCoderInfo.range == 0)
 		{
@@ -120,21 +121,21 @@ int CUnBitArray::DecodeValueRange(UNBIT_ARRAY_STATE & BitArrayState)
     if (m_nVersion >= 3990)
     {
         // figure the pivot value
-        int nPivotValue = ape_max(BitArrayState.nKSum / 32, (uint32)1);
-        
+        int nPivotValue = std::max(BitArrayState.nKSum / 32, (uint32)1);
+
         // get the overflow
         int nOverflow = 0;
         {
             // decode
             int nRangeTotal = RangeDecodeFast(RANGE_OVERFLOW_SHIFT);
-            
+
             // lookup the symbol (must be a faster way than this)
             while (nRangeTotal >= int(RANGE_TOTAL_2[nOverflow + 1])) { nOverflow++; }
-            
+
             // update
             m_RangeCoderInfo.low -= m_RangeCoderInfo.range * RANGE_TOTAL_2[nOverflow];
             m_RangeCoderInfo.range = m_RangeCoderInfo.range * RANGE_WIDTH_2[nOverflow];
-            
+
             // get the working k
             if (nOverflow == (MODEL_ELEMENTS - 1))
             {
@@ -158,7 +159,7 @@ int CUnBitArray::DecodeValueRange(UNBIT_ARRAY_STATE & BitArrayState)
                 int nPivotValueB = nSplitFactor;
 
                 while (m_RangeCoderInfo.range <= BOTTOM_VALUE)
-                {   
+                {
                     m_RangeCoderInfo.buffer = (m_RangeCoderInfo.buffer << 8) | DecodeByte();
                     m_RangeCoderInfo.low = (m_RangeCoderInfo.low << 8) | ((m_RangeCoderInfo.buffer >> 1) & 0xFF);
                     m_RangeCoderInfo.range <<= 8;
@@ -168,7 +169,7 @@ int CUnBitArray::DecodeValueRange(UNBIT_ARRAY_STATE & BitArrayState)
                 m_RangeCoderInfo.low -= m_RangeCoderInfo.range * nBaseA;
 
                 while (m_RangeCoderInfo.range <= BOTTOM_VALUE)
-                {   
+                {
                     m_RangeCoderInfo.buffer = (m_RangeCoderInfo.buffer << 8) | DecodeByte();
                     m_RangeCoderInfo.low = (m_RangeCoderInfo.low << 8) | ((m_RangeCoderInfo.buffer >> 1) & 0xFF);
                     m_RangeCoderInfo.range <<= 8;
@@ -182,11 +183,11 @@ int CUnBitArray::DecodeValueRange(UNBIT_ARRAY_STATE & BitArrayState)
             else
             {
                 while (m_RangeCoderInfo.range <= BOTTOM_VALUE)
-                {   
+                {
                     m_RangeCoderInfo.buffer = (m_RangeCoderInfo.buffer << 8) | DecodeByte();
                     m_RangeCoderInfo.low = (m_RangeCoderInfo.low << 8) | ((m_RangeCoderInfo.buffer >> 1) & 0xFF);
                     m_RangeCoderInfo.range <<= 8;
-					
+
 					// check for end of life!
 					if (m_RangeCoderInfo.range == 0)
 						return 0;
@@ -208,15 +209,15 @@ int CUnBitArray::DecodeValueRange(UNBIT_ARRAY_STATE & BitArrayState)
     {
         // decode
         int nRangeTotal = RangeDecodeFast(RANGE_OVERFLOW_SHIFT);
-        
+
         // lookup the symbol (must be a faster way than this)
         int nOverflow = 0;
         while (nRangeTotal >= int(RANGE_TOTAL_1[nOverflow + 1])) { nOverflow++; }
-        
+
         // update
         m_RangeCoderInfo.low -= m_RangeCoderInfo.range * RANGE_TOTAL_1[nOverflow];
         m_RangeCoderInfo.range = m_RangeCoderInfo.range * RANGE_WIDTH_1[nOverflow];
-        
+
         // get the working k
         int nTempK;
         if (nOverflow == (MODEL_ELEMENTS - 1))
@@ -228,30 +229,30 @@ int CUnBitArray::DecodeValueRange(UNBIT_ARRAY_STATE & BitArrayState)
         {
             nTempK = (BitArrayState.k < 1) ? 0 : BitArrayState.k - 1;
         }
-        
+
         // figure the extra bits on the left and the left value
         if (nTempK <= 16 || m_nVersion < 3910)
         {
             nValue = RangeDecodeFastWithUpdate(nTempK);
-        }                    
+        }
         else
-        {    
+        {
             int nX1 = RangeDecodeFastWithUpdate(16);
             int nX2 = RangeDecodeFastWithUpdate(nTempK - 16);
             nValue = nX1 | (nX2 << 16);
         }
-            
+
         // build the value and output it
         nValue += (nOverflow << nTempK);
     }
 
     // update nKSum
     BitArrayState.nKSum += ((nValue + 1) / 2) - ((BitArrayState.nKSum + 16) >> 5);
-    
+
     // update k
-    if (BitArrayState.nKSum < K_SUM_MIN_BOUNDARY[BitArrayState.k]) 
+    if (BitArrayState.nKSum < K_SUM_MIN_BOUNDARY[BitArrayState.k])
         BitArrayState.k--;
-    else if (BitArrayState.nKSum >= K_SUM_MIN_BOUNDARY[BitArrayState.k + 1]) 
+    else if (BitArrayState.nKSum >= K_SUM_MIN_BOUNDARY[BitArrayState.k + 1])
         BitArrayState.k++;
 
     // output the value (converted to signed)
@@ -277,13 +278,13 @@ void CUnBitArray::Finalize()
 {
     // normalize
     while (m_RangeCoderInfo.range <= BOTTOM_VALUE)
-    {   
+    {
         m_nCurrentBitIndex += 8;
         m_RangeCoderInfo.range <<= 8;
 		if (m_RangeCoderInfo.range == 0)
 			return; // end of life!
     }
-    
+
     // used to back-pedal the last two bytes out
     // this should never have been a problem because we've outputted and normalized beforehand
     // but stopped doing it as of 3.96 in case it accounted for rare decompression failures
@@ -296,13 +297,13 @@ void CUnBitArray::GenerateArrayRange(int * pOutputArray, int nElements)
     UNBIT_ARRAY_STATE BitArrayState;
     FlushState(BitArrayState);
     FlushBitArray();
-    
+
     for (int z = 0; z < nElements; z++)
     {
         pOutputArray[z] = DecodeValueRange(BitArrayState);
     }
 
-    Finalize();    
+    Finalize();
 }
 
 }
