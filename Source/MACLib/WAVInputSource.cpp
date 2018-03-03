@@ -200,7 +200,7 @@ int CWAVInputSource::AnalyzeSource()
     // we're at the data block
     m_nHeaderBytes = m_spIO->GetPosition();
     m_nDataBytes = RIFFChunkHeader.nChunkBytes;
-    if (m_nDataBytes < 0)
+    if (m_nDataBytes <= 0)
         m_nDataBytes = m_nFileBytes - m_nHeaderBytes;
 	else if (m_nDataBytes > (m_nFileBytes - m_nHeaderBytes))
 		m_nDataBytes = m_nFileBytes - m_nHeaderBytes;
