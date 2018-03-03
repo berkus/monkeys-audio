@@ -11,7 +11,7 @@ Notes for use in a new project:
 	-you need to include "MACLib.lib" in the included libraries list
 	-life will be easier if you set the [MAC SDK]\\Shared directory as an include
 	directory and an additional library input path in the project settings
-	-set the runtime library to "Mutlithreaded"
+	-set the runtime library to "Multithreaded"
 
 WARNING:
 	-This class driven system for using Monkey's Audio is still in development, so
