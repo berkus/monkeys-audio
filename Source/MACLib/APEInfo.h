@@ -9,7 +9,7 @@ to do whatever you need... the destructor will take care of any cleanup
 Notes:
     -Most all functions return 0 upon success, and some error code (other than 0) on
     failure.  However, all of the file functions that are wrapped from the Win32 API
-    return 0 on failure and some other number on success.  This applies to ReadFile, 
+    return 0 on failure and some other number on success.  This applies to ReadFile,
     WriteFile, SetFilePointer, etc...
 *****************************************************************************************/
 
@@ -23,7 +23,7 @@ namespace APE
 {
 
 /*****************************************************************************************
-APE_FILE_INFO - structure which describes most aspects of an APE file 
+APE_FILE_INFO - structure which describes most aspects of an APE file
 (used internally for speed and ease)
 *****************************************************************************************/
 struct APE_FILE_INFO
@@ -73,21 +73,21 @@ CAPEInfo - use this for all work with APE files
 class CAPEInfo
 {
 public:
-    
+
     // construction and destruction
     CAPEInfo(int * pErrorCode, std::string pFilename, CAPETag * pTag = NULL);
     CAPEInfo(int * pErrorCode, APE::CIO * pIO, CAPETag * pTag = NULL);
-    virtual ~CAPEInfo();
+    virtual ~CAPEInfo() { CloseFile(); }
 
     // query for information
     intn GetInfo(APE_DECOMPRESS_FIELDS Field, intn nParam1 = 0, intn nParam2 = 0);
-    
+
 private:
     // internal functions
     int GetFileInformation(bool bGetTagInformation = true);
     int CloseFile();
     int CheckHeaderInformation();
-    
+
     // internal variables
     bool m_bHasFileInformationLoaded;
     CSmartPtr<APE::CIO> m_spIO;

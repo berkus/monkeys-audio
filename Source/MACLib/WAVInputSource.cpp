@@ -9,13 +9,13 @@
 namespace APE
 {
 
-struct RIFF_HEADER 
+struct RIFF_HEADER
 {
     char cRIFF[4];            // the characters 'RIFF' indicating that it's a RIFF file
     unsigned long nBytes;     // the number of bytes following this header
 };
 
-struct DATA_TYPE_ID_HEADER 
+struct DATA_TYPE_ID_HEADER
 {
     char cDataTypeID[4];      // should equal 'WAVE' for a WAV file
 };
@@ -33,7 +33,7 @@ struct WAV_FORMAT_HEADER
 struct RIFF_CHUNK_HEADER
 {
     char cChunkLabel[4];        // should equal "data" indicating the data chunk
-    unsigned long nChunkBytes;  // the bytes of the chunk  
+    unsigned long nChunkBytes;  // the bytes of the chunk
 };
 
 
@@ -74,7 +74,7 @@ CWAVInputSource::CWAVInputSource(CIO * pIO, WAVEFORMATEX * pwfeSource, int * pTo
         if (pErrorCode) *pErrorCode = ERROR_BAD_PARAMETER;
         return;
     }
-    
+
     m_spIO.Assign(pIO, false, false);
 
     int nResult = AnalyzeSource();
@@ -88,7 +88,7 @@ CWAVInputSource::CWAVInputSource(CIO * pIO, WAVEFORMATEX * pwfeSource, int * pTo
 
         m_bIsValid = true;
     }
-    
+
     if (pErrorCode) *pErrorCode = nResult;
 }
 
@@ -102,7 +102,7 @@ CWAVInputSource::CWAVInputSource(std::string pSourceName, WAVEFORMATEX * pwfeSou
         if (pErrorCode) *pErrorCode = ERROR_BAD_PARAMETER;
         return;
     }
-    
+
     m_spIO.Assign(new IO_CLASS_NAME);
     if (m_spIO->Open(pSourceName, true) != ERROR_SUCCESS)
     {
@@ -122,54 +122,50 @@ CWAVInputSource::CWAVInputSource(std::string pSourceName, WAVEFORMATEX * pwfeSou
 
         m_bIsValid = true;
     }
-    
-    if (pErrorCode) *pErrorCode = nResult;
-}
 
-CWAVInputSource::~CWAVInputSource()
-{
+    if (pErrorCode) *pErrorCode = nResult;
 }
 
 int CWAVInputSource::AnalyzeSource()
 {
     // seek to the beginning (just in case)
     m_spIO->Seek(0, FILE_BEGIN);
-    
+
     // get the file size
     m_nFileBytes = m_spIO->GetSize();
 
     // get the RIFF header
     RIFF_HEADER RIFFHeader;
-    RETURN_ON_ERROR(ReadSafe(m_spIO, &RIFFHeader, sizeof(RIFFHeader))) 
+    RETURN_ON_ERROR(ReadSafe(m_spIO, &RIFFHeader, sizeof(RIFFHeader)))
 
     // make sure the RIFF header is valid
-    if (!(RIFFHeader.cRIFF[0] == 'R' && RIFFHeader.cRIFF[1] == 'I' && RIFFHeader.cRIFF[2] == 'F' && RIFFHeader.cRIFF[3] == 'F')) 
+    if (!(RIFFHeader.cRIFF[0] == 'R' && RIFFHeader.cRIFF[1] == 'I' && RIFFHeader.cRIFF[2] == 'F' && RIFFHeader.cRIFF[3] == 'F'))
         return ERROR_INVALID_INPUT_FILE;
 
     // read the data type header
     DATA_TYPE_ID_HEADER DataTypeIDHeader;
-    RETURN_ON_ERROR(ReadSafe(m_spIO, &DataTypeIDHeader, sizeof(DataTypeIDHeader))) 
-    
+    RETURN_ON_ERROR(ReadSafe(m_spIO, &DataTypeIDHeader, sizeof(DataTypeIDHeader)))
+
     // make sure it's the right data type
-    if (!(DataTypeIDHeader.cDataTypeID[0] == 'W' && DataTypeIDHeader.cDataTypeID[1] == 'A' && DataTypeIDHeader.cDataTypeID[2] == 'V' && DataTypeIDHeader.cDataTypeID[3] == 'E')) 
+    if (!(DataTypeIDHeader.cDataTypeID[0] == 'W' && DataTypeIDHeader.cDataTypeID[1] == 'A' && DataTypeIDHeader.cDataTypeID[2] == 'V' && DataTypeIDHeader.cDataTypeID[3] == 'E'))
         return ERROR_INVALID_INPUT_FILE;
 
     // find the 'fmt ' chunk
     RIFF_CHUNK_HEADER RIFFChunkHeader;
-    RETURN_ON_ERROR(ReadSafe(m_spIO, &RIFFChunkHeader, sizeof(RIFFChunkHeader))) 
-    
-    while (!(RIFFChunkHeader.cChunkLabel[0] == 'f' && RIFFChunkHeader.cChunkLabel[1] == 'm' && RIFFChunkHeader.cChunkLabel[2] == 't' && RIFFChunkHeader.cChunkLabel[3] == ' ')) 
+    RETURN_ON_ERROR(ReadSafe(m_spIO, &RIFFChunkHeader, sizeof(RIFFChunkHeader)))
+
+    while (!(RIFFChunkHeader.cChunkLabel[0] == 'f' && RIFFChunkHeader.cChunkLabel[1] == 'm' && RIFFChunkHeader.cChunkLabel[2] == 't' && RIFFChunkHeader.cChunkLabel[3] == ' '))
     {
         // move the file pointer to the end of this chunk
         m_spIO->Seek(RIFFChunkHeader.nChunkBytes, FILE_CURRENT);
 
         // check again for the data chunk
-        RETURN_ON_ERROR(ReadSafe(m_spIO, &RIFFChunkHeader, sizeof(RIFFChunkHeader))) 
+        RETURN_ON_ERROR(ReadSafe(m_spIO, &RIFFChunkHeader, sizeof(RIFFChunkHeader)))
     }
-    
+
     // read the format info
     WAV_FORMAT_HEADER WAVFormatHeader;
-    RETURN_ON_ERROR(ReadSafe(m_spIO, &WAVFormatHeader, sizeof(WAVFormatHeader))) 
+    RETURN_ON_ERROR(ReadSafe(m_spIO, &WAVFormatHeader, sizeof(WAVFormatHeader)))
 
     // error check the header to see if we support it
     if (WAVFormatHeader.nFormatTag != 1)
@@ -184,17 +180,17 @@ int CWAVInputSource::AnalyzeSource()
         return ERROR_INVALID_INPUT_FILE;
     else
         m_spIO->Seek(nWAVFormatHeaderExtra, FILE_CURRENT);
-    
-    // find the data chunk
-    RETURN_ON_ERROR(ReadSafe(m_spIO, &RIFFChunkHeader, sizeof(RIFFChunkHeader))) 
 
-    while (!(RIFFChunkHeader.cChunkLabel[0] == 'd' && RIFFChunkHeader.cChunkLabel[1] == 'a' && RIFFChunkHeader.cChunkLabel[2] == 't' && RIFFChunkHeader.cChunkLabel[3] == 'a')) 
+    // find the data chunk
+    RETURN_ON_ERROR(ReadSafe(m_spIO, &RIFFChunkHeader, sizeof(RIFFChunkHeader)))
+
+    while (!(RIFFChunkHeader.cChunkLabel[0] == 'd' && RIFFChunkHeader.cChunkLabel[1] == 'a' && RIFFChunkHeader.cChunkLabel[2] == 't' && RIFFChunkHeader.cChunkLabel[3] == 'a'))
     {
         // move the file pointer to the end of this chunk
         m_spIO->Seek(RIFFChunkHeader.nChunkBytes, FILE_CURRENT);
 
         // check again for the data chunk
-        RETURN_ON_ERROR(ReadSafe(m_spIO, &RIFFChunkHeader, sizeof(RIFFChunkHeader))) 
+        RETURN_ON_ERROR(ReadSafe(m_spIO, &RIFFChunkHeader, sizeof(RIFFChunkHeader)))
     }
 
     // we're at the data block
@@ -211,7 +207,7 @@ int CWAVInputSource::AnalyzeSource()
 
     // calculate the terminating byts
     m_nTerminatingBytes = m_nFileBytes - m_nDataBytes - m_nHeaderBytes;
-    
+
     // we made it this far, everything must be cool
     return ERROR_SUCCESS;
 }
@@ -242,7 +238,7 @@ int CWAVInputSource::GetHeaderData(unsigned char * pBuffer)
         int nOriginalFileLocation = m_spIO->GetPosition();
 
         m_spIO->Seek(0, FILE_BEGIN);
-        
+
         unsigned int nBytesRead = 0;
         int nReadRetVal = m_spIO->Read(pBuffer, m_nHeaderBytes, &nBytesRead);
 
@@ -268,7 +264,7 @@ int CWAVInputSource::GetTerminatingData(unsigned char * pBuffer)
         int nOriginalFileLocation = m_spIO->GetPosition();
 
         m_spIO->Seek(-m_nTerminatingBytes, FILE_END);
-        
+
         unsigned int nBytesRead = 0;
         int nReadRetVal = m_spIO->Read(pBuffer, m_nTerminatingBytes, &nBytesRead);
 
