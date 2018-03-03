@@ -9,22 +9,22 @@ namespace APE
 class CAPELink
 {
 public:
-    CAPELink(const str_utfn * pFilename);
-    CAPELink(const char * pData, const str_utfn * pFilename);
-    ~CAPELink();
+    CAPELink(std::string pFilename);
+    CAPELink(const char * pData, std::string pFilename);
+    ~CAPELink() = default;
 
     bool GetIsLinkFile();
     int GetStartBlock();
     int GetFinishBlock();
-    const wchar_t * GetImageFilename();
+    std::string GetImageFilename();
 
 protected:
-    bool m_bIsLinkFile;
-    int m_nStartBlock;
-    int m_nFinishBlock;
-    str_utfn m_cImageFilename[MAX_PATH];
+    bool m_bIsLinkFile {false};
+    int m_nStartBlock {0};
+    int m_nFinishBlock {0};
+    std::string m_cImageFilename;
 
-    void ParseData(const char * pData, const str_utfn * pFilename);
+    void ParseData(const char * pData, std::string pFilename);
 };
 
 }
