@@ -401,6 +401,9 @@ intn CAPEInfo::GetInfo(APE_DECOMPRESS_FIELDS Field, intn nParam1, intn nParam2)
     case APE_INTERNAL_INFO:
         nResult = (intn) &m_APEFileInfo;
         break;
+    default:
+        std::cerr << "PANIC: unexpected enum value" << std::endl;
+        exit(-1);
     }
 
     return nResult;
