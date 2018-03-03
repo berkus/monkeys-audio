@@ -1,5 +1,7 @@
 #pragma once
 
+#include <thread>
+
 /*****************************************************************************************
 Platform
 
@@ -37,7 +39,7 @@ Global includes
     #include "NoWindows.h"
 #endif
 
-#include "SmartPtr.h"
+#include "SmartPtr.h" // @todo kill it with fire
 
 /*****************************************************************************************
 Global compiler settings (useful for porting)
@@ -142,7 +144,7 @@ Global macros
     #define IO_HEADER_FILE                              "StdLibFileIO.h"
     #define IO_CLASS_NAME                               CStdLibFileIO
     #define DLLEXPORT
-    #define SLEEP(MILLISECONDS)                         { struct timespec t; t.tv_sec = (MILLISECONDS) / 1000; t.tv_nsec = (MILLISECONDS) % 1000 * 1000000; nanosleep(&t, NULL); }
+    #define SLEEP(MILLISECONDS)                         std::this_thread::sleep_for(std::chrono::milliseconds(MILLISECONDS))
     #define MESSAGEBOX(PARENT, TEXT, CAPTION, TYPE)
     #define PUMP_MESSAGE_LOOP
     #define ODS                                         printf
