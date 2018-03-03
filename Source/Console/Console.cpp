@@ -7,10 +7,13 @@ more functionality like tagging, auto-verify, etc., that'd be excellent.
 Copyrighted (c) 2000 - 2018 Matthew T. Ashland.  All Rights Reserved.
 ***************************************************************************************/
 #include "All.h"
-#include <stdio.h>
 #include "GlobalFunctions.h"
 #include "MACLib.h"
 #include "CharacterHelper.h"
+#include <iostream>
+#include <boost/filesystem.hpp>
+
+using namespace std;
 using namespace APE;
 
 // defines
@@ -26,25 +29,25 @@ TICK_COUNT_TYPE g_nInitialTickCount = 0;
 /***************************************************************************************
 Displays the proper usage for MAC.exe
 ***************************************************************************************/
-void DisplayProperUsage(FILE * pFile)
+void DisplayProperUsage()
 {
-	fprintf(pFile, _T("Proper Usage: [EXE] [Input File] [Output File] [Mode]\n\n"));
+	cerr << "Proper Usage: [EXE] [Input File] [Output File] [Mode]\n\n"
 
-	fprintf(pFile, _T("Modes: \n"));
-	fprintf(pFile, _T("    Compress (fast): '-c1000'\n"));
-	fprintf(pFile, _T("    Compress (normal): '-c2000'\n"));
-	fprintf(pFile, _T("    Compress (high): '-c3000'\n"));
-	fprintf(pFile, _T("    Compress (extra high): '-c4000'\n"));
-	fprintf(pFile, _T("    Compress (insane): '-c5000'\n"));
-	fprintf(pFile, _T("    Decompress: '-d'\n"));
-	fprintf(pFile, _T("    Verify: '-v'\n"));
-	fprintf(pFile, _T("    Convert: '-nXXXX'\n\n"));
+		    "Modes: \n"
+		    "    Compress (fast): '-c1000'\n"
+		    "    Compress (normal): '-c2000'\n"
+		    "    Compress (high): '-c3000'\n"
+		    "    Compress (extra high): '-c4000'\n"
+		    "    Compress (insane): '-c5000'\n"
+		    "    Decompress: '-d'\n"
+		    "    Verify: '-v'\n"
+		    "    Convert: '-nXXXX'\n\n"
 
-	fprintf(pFile, _T("Examples:\n"));
-	fprintf(pFile, _T("    Compress: mac.exe \"Metallica - One.wav\" \"Metallica - One.ape\" -c2000\n"));
-	fprintf(pFile, _T("    Decompress: mac.exe \"Metallica - One.ape\" \"Metallica - One.wav\" -d\n"));
-	fprintf(pFile, _T("    Verify: mac.exe \"Metallica - One.ape\" -v\n"));
-	fprintf(pFile, _T("    (note: int filenames must be put inside of quotations)\n"));
+		    "Examples:\n"
+		    "    Compress: mac.exe \"Metallica - One.wav\" \"Metallica - One.ape\" -c2000\n"
+		    "    Decompress: mac.exe \"Metallica - One.ape\" \"Metallica - One.wav\" -d\n"
+		    "    Verify: mac.exe \"Metallica - One.ape\" -v\n"
+		    "    (note: int filenames must be put inside of quotations)" << endl;
 }
 
 /***************************************************************************************
@@ -69,86 +72,80 @@ void CALLBACK ProgressCallback(int nPercentageDone)
 /***************************************************************************************
 Main (the main function)
 ***************************************************************************************/
-int _tmain(int argc, TCHAR * argv[])
+int main(int argc, char * argv[])
 {
 	// variable declares
-	CSmartPtr<wchar_t> spInputFilename; CSmartPtr<wchar_t> spOutputFilename;
+	std::string spInputFilename, spOutputFilename;
 	int nRetVal = ERROR_UNDEFINED;
 	int nMode = UNDEFINED_MODE;
 	int nCompressionLevel;
 	int nPercentageDone;
 
 	// output the header
-	fprintf(stderr, CONSOLE_NAME);
+	cerr << CONSOLE_NAME;
 
 	// make sure there are at least four arguments (could be more for EAC compatibility)
 	if (argc < 3)
 	{
-		DisplayProperUsage(stderr);
+		DisplayProperUsage();
 		exit(-1);
 	}
 
 	// store the filenames
-	#ifdef _UNICODE
-		spInputFilename.Assign(argv[1], TRUE, FALSE);
-		spOutputFilename.Assign(argv[2], TRUE, FALSE);
-	#else
-		spInputFilename.Assign(CAPECharacterHelper::GetUTF16FromANSI(argv[1]), TRUE);
-		spOutputFilename.Assign(CAPECharacterHelper::GetUTF16FromANSI(argv[2]), TRUE);
-	#endif
+	spInputFilename = argv[1];
+	spOutputFilename = argv[2];
 
 	// verify that the input file exists
-	if (!FileExists(spInputFilename))
+	if (!boost::filesystem::exists(spInputFilename)) // @todo `-` and `/dev/stdin` checks
 	{
-		fprintf(stderr, _T("Input File Not Found...\n\n"));
+		cerr << "Input File Not Found...\n" << endl;
 		exit(-1);
 	}
 
 	// if the output file equals '-v', then use this as the next argument
-	TCHAR cMode[256];
-	_tcsncpy(cMode, argv[2], 255);
+	std::string cMode = argv[2];
 
-	if (_tcsnicmp(cMode, _T("-v"), 2) != 0)
+	if (cMode != "-v"s)
 	{
 		// verify is the only mode that doesn't use at least the third argument
 		if (argc < 4)
 		{
-			DisplayProperUsage(stderr);
+			DisplayProperUsage();
 			exit(-1);
 		}
 
 		// check for and skip if necessary the -b XXXXXX arguments (3,4)
-		_tcsncpy(cMode, argv[3], 255);
+		cMode = argv[3];
 	}
 
 	// get the mode
 	nMode = UNDEFINED_MODE;
-	if (_tcsnicmp(cMode, _T("-c"), 2) == 0)
+	if (cMode == "-c"s) // @todo case-insensitive compare
 		nMode = COMPRESS_MODE;
-	else if (_tcsnicmp(cMode, _T("-d"), 2) == 0)
+	else if (cMode == "-d"s) // @todo case-insensitive compare
 		nMode = DECOMPRESS_MODE;
-	else if (_tcsnicmp(cMode, _T("-v"), 2) == 0)
+	else if (cMode == "-v"s) // @todo case-insensitive compare
 		nMode = VERIFY_MODE;
-	else if (_tcsnicmp(cMode, _T("-n"), 2) == 0)
+	else if (cMode == "-n"s) // @todo case-insensitive compare
 		nMode = CONVERT_MODE;
 
 	// error check the mode
 	if (nMode == UNDEFINED_MODE)
 	{
-		DisplayProperUsage(stderr);
+		DisplayProperUsage();
 		exit(-1);
 	}
 
 	// get and error check the compression level
 	if (nMode == COMPRESS_MODE || nMode == CONVERT_MODE)
 	{
-		nCompressionLevel = _ttoi(&cMode[2]);
+		nCompressionLevel = atoi(&cMode[2]);
 		if (nCompressionLevel != 1000 && nCompressionLevel != 2000 &&
 			nCompressionLevel != 3000 && nCompressionLevel != 4000 &&
 			nCompressionLevel != 5000)
 		{
-			DisplayProperUsage(stderr);
-			return -1;
+			DisplayProperUsage();
+			exit(-1);
 		}
 	}
 
@@ -159,36 +156,36 @@ int _tmain(int argc, TCHAR * argv[])
 	int nKillFlag = 0;
 	if (nMode == COMPRESS_MODE)
 	{
-		TCHAR cCompressionLevel[16];
-		if (nCompressionLevel == 1000) { _tcscpy(cCompressionLevel, _T("fast")); }
-		if (nCompressionLevel == 2000) { _tcscpy(cCompressionLevel, _T("normal")); }
-		if (nCompressionLevel == 3000) { _tcscpy(cCompressionLevel, _T("high")); }
-		if (nCompressionLevel == 4000) { _tcscpy(cCompressionLevel, _T("extra high")); }
-		if (nCompressionLevel == 5000) { _tcscpy(cCompressionLevel, _T("insane")); }
+		std::string cCompressionLevel;
+		if (nCompressionLevel == COMPRESSION_LEVEL_FAST) { cCompressionLevel = "fast"; }
+		if (nCompressionLevel == COMPRESSION_LEVEL_NORMAL) { cCompressionLevel = "normal"; }
+		if (nCompressionLevel == COMPRESSION_LEVEL_HIGH) { cCompressionLevel = "high"; }
+		if (nCompressionLevel == COMPRESSION_LEVEL_EXTRA_HIGH) { cCompressionLevel = "extra high"; }
+		if (nCompressionLevel == COMPRESSION_LEVEL_INSANE) { cCompressionLevel = "insane"; }
 
-		fprintf(stderr, _T("Compressing (%s)...\n"), cCompressionLevel);
-		nRetVal = CompressFileW(spInputFilename, spOutputFilename, nCompressionLevel, &nPercentageDone, ProgressCallback, &nKillFlag);
+		cerr << "Compressing (" << cCompressionLevel << ")..." << endl;
+		nRetVal = CompressFile(spInputFilename, spOutputFilename, nCompressionLevel, &nPercentageDone, ProgressCallback, &nKillFlag);
 	}
 	else if (nMode == DECOMPRESS_MODE)
 	{
-		fprintf(stderr, _T("Decompressing...\n"));
-		nRetVal = DecompressFileW(spInputFilename, spOutputFilename, &nPercentageDone, ProgressCallback, &nKillFlag);
+		cerr << "Decompressing..." << endl;
+		nRetVal = DecompressFile(spInputFilename, spOutputFilename, &nPercentageDone, ProgressCallback, &nKillFlag);
 	}
 	else if (nMode == VERIFY_MODE)
 	{
-		fprintf(stderr, _T("Verifying...\n"));
-		nRetVal = VerifyFileW(spInputFilename, &nPercentageDone, ProgressCallback, &nKillFlag);
+		cerr << "Verifying..." << endl;
+		nRetVal = VerifyFile(spInputFilename, &nPercentageDone, ProgressCallback, &nKillFlag);
 	}
 	else if (nMode == CONVERT_MODE)
 	{
-		fprintf(stderr, _T("Converting...\n"));
-		nRetVal = ConvertFileW(spInputFilename, spOutputFilename, nCompressionLevel, &nPercentageDone, ProgressCallback, &nKillFlag);
+		cerr << "Converting..." << endl;
+		nRetVal = ConvertFile(spInputFilename, spOutputFilename, nCompressionLevel, &nPercentageDone, ProgressCallback, &nKillFlag);
 	}
 
 	if (nRetVal == ERROR_SUCCESS)
-		fprintf(stderr, _T("\nSuccess...\n"));
+		cerr << "\nSuccess..." << endl;
 	else
-		fprintf(stderr, _T("\nError: %i\n"), nRetVal);
+		cerr << "\nnError: " << nRetVal << endl;
 
 	return nRetVal;
 }
