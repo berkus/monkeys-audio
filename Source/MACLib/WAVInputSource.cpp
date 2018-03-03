@@ -3,6 +3,8 @@
 #include IO_HEADER_FILE
 #include "MACLib.h"
 #include "GlobalFunctions.h"
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace APE
 {
@@ -35,22 +37,22 @@ struct RIFF_CHUNK_HEADER
 };
 
 
-CInputSource * CreateInputSource(const wchar_t * pSourceName, WAVEFORMATEX * pwfeSource, int * pTotalBlocks, int * pHeaderBytes, int * pTerminatingBytes, int * pErrorCode)
-{ 
+CInputSource * CreateInputSource(std::string pSourceName, WAVEFORMATEX * pwfeSource, int * pTotalBlocks, int * pHeaderBytes, int * pTerminatingBytes, int * pErrorCode)
+{
     // error check the parameters
-    if ((pSourceName == NULL) || (wcslen(pSourceName) == 0))
+    if (pSourceName.size() == 0)
     {
         if (pErrorCode) *pErrorCode = ERROR_BAD_PARAMETER;
         return NULL;
     }
 
     // get the extension
-    const wchar_t * pExtension = &pSourceName[wcslen(pSourceName)];
-    while ((pExtension > pSourceName) && (*pExtension != '.'))
-        pExtension--;
+    namespace fs = boost::filesystem;
+
+    std::string pExtension = fs::extension(pSourceName);
 
     // create the proper input source
-    if (StringIsEqual(pExtension, L".wav", false))
+    if (boost::algorithm::iequals(pExtension, ".wav"))
     {
         if (pErrorCode) *pErrorCode = ERROR_SUCCESS;
         return new CWAVInputSource(pSourceName, pwfeSource, pTotalBlocks, pHeaderBytes, pTerminatingBytes, pErrorCode);
@@ -90,12 +92,12 @@ CWAVInputSource::CWAVInputSource(CIO * pIO, WAVEFORMATEX * pwfeSource, int * pTo
     if (pErrorCode) *pErrorCode = nResult;
 }
 
-CWAVInputSource::CWAVInputSource(const wchar_t * pSourceName, WAVEFORMATEX * pwfeSource, int * pTotalBlocks, int * pHeaderBytes, int * pTerminatingBytes, int * pErrorCode)
+CWAVInputSource::CWAVInputSource(std::string pSourceName, WAVEFORMATEX * pwfeSource, int * pTotalBlocks, int * pHeaderBytes, int * pTerminatingBytes, int * pErrorCode)
     : CInputSource(pSourceName, pwfeSource, pTotalBlocks, pHeaderBytes, pTerminatingBytes, pErrorCode)
 {
     m_bIsValid = false;
 
-    if (pSourceName == NULL || pwfeSource == NULL)
+    if (pSourceName.size() == 0 or pwfeSource == nullptr)
     {
         if (pErrorCode) *pErrorCode = ERROR_BAD_PARAMETER;
         return;

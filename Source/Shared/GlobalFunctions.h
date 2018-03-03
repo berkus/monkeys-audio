@@ -18,7 +18,7 @@ intn WriteSafe(CIO * pIO, void * pBuffer, intn nBytes);
 /*************************************************************************************
 Checks for the existence of a file
 *************************************************************************************/
-bool FileExists(wchar_t * pFilename);
+bool FileExists(std::string pFilename); // @todo std::filesystem
 
 /*************************************************************************************
 Allocate aligned memory
@@ -35,6 +35,6 @@ bool GetSSEAvailable();
 /*************************************************************************************
 String helpers
 *************************************************************************************/
-bool StringIsEqual(const str_utfn * pString1, const str_utfn * pString2, bool bCaseSensitive, int nCharacters = -1);
+bool StringIsEqual(const char * pString1, const char * pString2, bool bCaseSensitive, int nCharacters = -1);
 
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 namespace APE
 {
 
@@ -25,13 +27,13 @@ APETag layout
         Flags (4 bytes)
         Field Name (? ANSI bytes -- requires NULL terminator -- in range of 0x20 (space) to 0x7E (tilde))
         Value ([Value Size] bytes)
-3) Footer - APE_TAG_FOOTER (32 bytes)    
+3) Footer - APE_TAG_FOOTER (32 bytes)
 *****************************************************************************************/
 
 /*****************************************************************************************
 Notes
 
-When saving images, store the filename (no directory -- i.e. Cover.jpg) in UTF-8 followed 
+When saving images, store the filename (no directory -- i.e. Cover.jpg) in UTF-8 followed
 by a null terminator, followed by the image data.
 
 What saving text lists, delimit the values with a NULL terminator.
@@ -45,34 +47,34 @@ The version of the APE tag
 /*****************************************************************************************
 "Standard" APE tag fields
 *****************************************************************************************/
-#define APE_TAG_FIELD_TITLE                     L"Title"
-#define APE_TAG_FIELD_ARTIST                    L"Artist"
-#define APE_TAG_FIELD_ALBUM                     L"Album"
-#define APE_TAG_FIELD_COMMENT                   L"Comment"
-#define APE_TAG_FIELD_YEAR                      L"Year"
-#define APE_TAG_FIELD_TRACK                     L"Track"
-#define APE_TAG_FIELD_GENRE                     L"Genre"
-#define APE_TAG_FIELD_COVER_ART_FRONT           L"Cover Art (front)"
-#define APE_TAG_FIELD_NOTES                     L"Notes"
-#define APE_TAG_FIELD_LYRICS                    L"Lyrics"
-#define APE_TAG_FIELD_COPYRIGHT                 L"Copyright"
-#define APE_TAG_FIELD_BUY_URL                   L"Buy URL"
-#define APE_TAG_FIELD_ARTIST_URL                L"Artist URL"
-#define APE_TAG_FIELD_PUBLISHER_URL             L"Publisher URL"
-#define APE_TAG_FIELD_FILE_URL                  L"File URL"
-#define APE_TAG_FIELD_COPYRIGHT_URL             L"Copyright URL"
-#define APE_TAG_FIELD_TOOL_NAME                 L"Tool Name"
-#define APE_TAG_FIELD_TOOL_VERSION              L"Tool Version"
-#define APE_TAG_FIELD_PEAK_LEVEL                L"Peak Level"
-#define APE_TAG_FIELD_REPLAY_GAIN_RADIO         L"Replay Gain (radio)"
-#define APE_TAG_FIELD_REPLAY_GAIN_ALBUM         L"Replay Gain (album)"
-#define APE_TAG_FIELD_COMPOSER                  L"Composer"
-#define APE_TAG_FIELD_KEYWORDS                  L"Keywords"
+#define APE_TAG_FIELD_TITLE                     "Title"
+#define APE_TAG_FIELD_ARTIST                    "Artist"
+#define APE_TAG_FIELD_ALBUM                     "Album"
+#define APE_TAG_FIELD_COMMENT                   "Comment"
+#define APE_TAG_FIELD_YEAR                      "Year"
+#define APE_TAG_FIELD_TRACK                     "Track"
+#define APE_TAG_FIELD_GENRE                     "Genre"
+#define APE_TAG_FIELD_COVER_ART_FRONT           "Cover Art (front)"
+#define APE_TAG_FIELD_NOTES                     "Notes"
+#define APE_TAG_FIELD_LYRICS                    "Lyrics"
+#define APE_TAG_FIELD_COPYRIGHT                 "Copyright"
+#define APE_TAG_FIELD_BUY_URL                   "Buy URL"
+#define APE_TAG_FIELD_ARTIST_URL                "Artist URL"
+#define APE_TAG_FIELD_PUBLISHER_URL             "Publisher URL"
+#define APE_TAG_FIELD_FILE_URL                  "File URL"
+#define APE_TAG_FIELD_COPYRIGHT_URL             "Copyright URL"
+#define APE_TAG_FIELD_TOOL_NAME                 "Tool Name"
+#define APE_TAG_FIELD_TOOL_VERSION              "Tool Version"
+#define APE_TAG_FIELD_PEAK_LEVEL                "Peak Level"
+#define APE_TAG_FIELD_REPLAY_GAIN_RADIO         "Replay Gain (radio)"
+#define APE_TAG_FIELD_REPLAY_GAIN_ALBUM         "Replay Gain (album)"
+#define APE_TAG_FIELD_COMPOSER                  "Composer"
+#define APE_TAG_FIELD_KEYWORDS                  "Keywords"
 
 /*****************************************************************************************
 Standard APE tag field values
 *****************************************************************************************/
-#define APE_TAG_GENRE_UNDEFINED                 L"Undefined"
+#define APE_TAG_GENRE_UNDEFINED                 "Undefined"
 
 /*****************************************************************************************
 ID3 v1.1 tag
@@ -118,7 +120,7 @@ The footer at the end of APE tagged files (can also optionally be at the front o
 class APE_TAG_FOOTER
 {
 protected:
-    char m_cID[8];              // should equal 'APETAGEX'    
+    char m_cID[8];              // should equal 'APETAGEX'
     int m_nVersion;             // equals CURRENT_APE_TAG_VERSION
     int m_nSize;                // the complete size of the tag, including this footer (excludes header)
     int m_nFields;              // the number of fields in the tag
@@ -146,12 +148,12 @@ public:
 
     bool GetIsValid(bool bAllowHeader)
     {
-        bool bValid = (strncmp(m_cID, "APETAGEX", 8) == 0) && 
+        bool bValid = (strncmp(m_cID, "APETAGEX", 8) == 0) &&
             (m_nVersion <= CURRENT_APE_TAG_VERSION) &&
             (m_nFields <= 65536) &&
             (m_nSize >= APE_TAG_FOOTER_BYTES) &&
             (GetFieldBytes() <= (1024 * 1024 * 16));
-        
+
         if (bValid && !bAllowHeader && GetIsHeader())
             bValid = false;
 
@@ -166,26 +168,26 @@ class CAPETagField
 {
 public:
     // create a tag field (use nFieldBytes = -1 for null-terminated strings)
-    CAPETagField(const str_utfn * pFieldName, const void * pFieldValue, int nFieldBytes = -1, int nFlags = 0);
-    
+    CAPETagField(std::string pFieldName, const void * pFieldValue, int nFieldBytes = -1, int nFlags = 0);
+
     // destructor
     ~CAPETagField();
 
     // gets the size of the entire field in bytes (name, value, and metadata)
     int GetFieldSize();
-    
+
     // get the name of the field
-    const str_utfn * GetFieldName();
+    std::string GetFieldName();
 
     // get the value of the field
     const char * GetFieldValue();
-    
+
     // get the size of the value (in bytes)
     int GetFieldValueSize();
 
     // get any special flags
     int GetFieldFlags();
-    
+
     // output the entire field to a buffer (GetFieldSize() bytes)
     int SaveField(char * pBuffer);
 
@@ -196,9 +198,9 @@ public:
     // set helpers (use with EXTREME caution)
     void SetFieldFlags(int nFlags) { m_nFieldFlags = nFlags; }
 
-private:        
-    CSmartPtr<str_utfn> m_spFieldNameUTF16;
-    CSmartPtr<char> m_spFieldValue;
+private:
+    std::string m_spFieldNameUTF16;
+    std::string m_spFieldValue;
     int m_nFieldFlags;
     int m_nFieldValueBytes;
 };
@@ -209,39 +211,39 @@ CAPETag class
 class CAPETag
 {
 public:
-    // create an APE tag 
+    // create an APE tag
     // bAnalyze determines whether it will analyze immediately or on the first request
     // be careful with multiple threads / file pointer movement if you don't analyze immediately
     CAPETag(CIO * pIO, bool bAnalyze = true);
-    CAPETag(const str_utfn * pFilename, bool bAnalyze = true);
-    
+    CAPETag(std::string pFilename, bool bAnalyze = true);
+
     // destructor
     ~CAPETag();
 
     // save the tag to the I/O source (bUseOldID3 forces it to save as an ID3v1.1 tag instead of an APE tag)
     int Save(bool bUseOldID3 = false);
-    
+
     // removes any tags from the file (bUpdate determines whether is should re-analyze after removing the tag)
     int Remove(bool bUpdate = true);
 
     // sets the value of a field (use nFieldBytes = -1 for null terminated strings)
     // note: using NULL or "" for a string type will remove the field
-    int SetFieldString(const str_utfn * pFieldName, const str_utfn * pFieldValue, const str_utfn * pListDelimiter = NULL);
-    int SetFieldString(const str_utfn * pFieldName, const char * pFieldValue, bool bAlreadyUTF8Encoded, const str_utfn * pListDelimiter = NULL);
-    int SetFieldBinary(const str_utfn * pFieldName, const void * pFieldValue, intn nFieldBytes, int nFieldFlags);
+    int SetFieldString(std::string pFieldName, std::string pFieldValue, const char * pListDelimiter = NULL);
+    int SetFieldString(std::string pFieldName, std::string pFieldValue, bool bAlreadyUTF8Encoded, const char * pListDelimiter = NULL);
+    int SetFieldBinary(std::string pFieldName, const void * pFieldValue, intn nFieldBytes, int nFieldFlags);
 
     // gets the value of a field (returns -1 and an empty buffer if the field doesn't exist)
-    int GetFieldBinary(const str_utfn * pFieldName, void * pBuffer, int * pBufferBytes);
-    int GetFieldString(const str_utfn * pFieldName, str_utfn * pBuffer, int * pBufferCharacters, const str_utfn * pListDelimiter = _T("; "));
-    int GetFieldString(const str_utfn * pFieldName, str_ansi * pBuffer, int * pBufferCharacters, bool bUTF8Encode = false);
+    int GetFieldBinary(const char * pFieldName, void * pBuffer, int * pBufferBytes);
+    int GetFieldString(const char * pFieldName, char * pBuffer, int * pBufferCharacters, const char * pListDelimiter = _T("; "));
+    int GetFieldString(const char * pFieldName, char * pBuffer, int * pBufferCharacters, bool bUTF8Encode = false);
 
     // remove a specific field
-    int RemoveField(const str_utfn * pFieldName);
+    int RemoveField(const char * pFieldName);
     int RemoveField(int nIndex);
 
     // clear all the fields
     int ClearFields();
-    
+
     // see if we've been analyzed (we do lazy analysis)
     bool GetAnalyzed() { return m_bAnalyzed; }
 
@@ -259,7 +261,7 @@ public:
 
     // gets a desired tag field (returns NULL if not found)
     // again, be careful, because this a pointer to the actual field in this class
-    CAPETagField * GetTagField(const str_utfn * pFieldName);
+    CAPETagField * GetTagField(const char * pFieldName);
     CAPETagField * GetTagField(int nIndex);
 
     // options
@@ -268,20 +270,20 @@ public:
 	// statics
 	static const int s_nID3GenreUndefined = 255;
 	static const int s_nID3GenreCount = 148;
-	static const wchar_t * s_aryID3GenreNames[s_nID3GenreCount];
+	static const char * s_aryID3GenreNames[s_nID3GenreCount];
 
 private:
     // private functions
     int Analyze();
-    int GetTagFieldIndex(const str_utfn * pFieldName);
+    int GetTagFieldIndex(const char * pFieldName);
     int WriteBufferToEndOfIO(void * pBuffer, int nBytes);
     int LoadField(const char * pBuffer, int nMaximumBytes, int * pBytes);
     int SortFields();
     static int CompareFields(const void * pA, const void * pB);
 
     // helper set / get field functions
-    int SetFieldID3String(const str_utfn * pFieldName, const char * pFieldValue, int nBytes);
-    int GetFieldID3String(const str_utfn * pFieldName, char * pBuffer, int nBytes);
+    int SetFieldID3String(const char * pFieldName, const char * pFieldValue, int nBytes);
+    int GetFieldID3String(const char * pFieldName, char * pBuffer, int nBytes);
 
     // private data
     CSmartPtr<CIO> m_spIO;

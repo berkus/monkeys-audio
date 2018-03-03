@@ -3,6 +3,7 @@
 #pragma once
 
 #include "IO.h"
+#include <boost/filesystem.hpp>
 
 namespace APE
 {
@@ -11,38 +12,38 @@ class CStdLibFileIO : public CIO
 {
 public:
     // construction / destruction
-    CStdLibFileIO();
-    ~CStdLibFileIO();
+    CStdLibFileIO() = default;
+    ~CStdLibFileIO() { Close(); }
 
     // open / close
-    int Open(const char * pName, bool bOpenReadOnly = false);
-    int Close();
+    int Open(std::string pName, bool bOpenReadOnly = false) override;
+    int Close() override;
 
     // read / write
-    int Read(void * pBuffer, unsigned int nBytesToRead, unsigned int * pBytesRead);
-    int Write(const void * pBuffer, unsigned int nBytesToWrite, unsigned int * pBytesWritten);
+    int Read(void * pBuffer, unsigned int nBytesToRead, unsigned int * pBytesRead) override;
+    int Write(const void * pBuffer, unsigned int nBytesToWrite, unsigned int * pBytesWritten) override;
 
     // seek
-    int Seek(intn nDistance, unsigned int nMoveMode);
+    int Seek(intn nDistance, unsigned int nMoveMode) override;
 
     // other functions
-    int SetEOF();
+    int SetEOF() override;
 
     // creation / destruction
-    int Create(const char * pName);
-    int Delete();
+    int Create(std::string pName) override;
+    int Delete() override;
 
     // attributes
-    int GetPosition();
-    unsigned int GetSize();
-    int GetName(char * pBuffer);
+    int GetPosition() override;
+    unsigned int GetSize() override;
+    std::string GetName() override;
     int GetHandle();
 
 private:
 
-    char m_cFileName[MAX_PATH];
-    bool m_bReadOnly;
-    FILE * m_pFile;
+    boost::filesystem::path m_cFileName;
+    bool m_bReadOnly {false};
+    FILE * m_pFile {nullptr};
 };
 
 }

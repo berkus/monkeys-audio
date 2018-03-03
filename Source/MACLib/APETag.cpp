@@ -4,6 +4,7 @@
 #include "IO.h"
 #include "GlobalFunctions.h"
 #include IO_HEADER_FILE
+#include <algorithm>
 
 namespace APE
 {
@@ -11,14 +12,14 @@ namespace APE
 /*****************************************************************************************
 CAPETagField
 *****************************************************************************************/
-CAPETagField::CAPETagField(const str_utfn * pFieldName, const void * pFieldValue, int nFieldBytes, int nFlags)
+CAPETagField::CAPETagField(const char * pFieldName, const void * pFieldValue, int nFieldBytes, int nFlags)
 {
     // field name
-    m_spFieldNameUTF16.Assign(new str_utfn [wcslen(pFieldName) + 1], true);
-    memcpy(m_spFieldNameUTF16, pFieldName, (wcslen(pFieldName) + 1) * sizeof(str_utfn));
-    
+    m_spFieldNameUTF16.Assign(new char [wcslen(pFieldName) + 1], true);
+    memcpy(m_spFieldNameUTF16, pFieldName, (wcslen(pFieldName) + 1) * sizeof(char));
+
     // data (we'll always allocate two extra bytes and memset to 0 so we're safely NULL terminated)
-    m_nFieldValueBytes = ape_max(nFieldBytes, 0);
+    m_nFieldValueBytes = std::max(nFieldBytes, 0);
     m_spFieldValue.Assign(new char [m_nFieldValueBytes + 2], true);
     memset(m_spFieldValue, 0, m_nFieldValueBytes + 2);
     if (m_nFieldValueBytes > 0)
@@ -31,14 +32,14 @@ CAPETagField::CAPETagField(const str_utfn * pFieldName, const void * pFieldValue
 CAPETagField::~CAPETagField()
 {
 }
-    
+
 int CAPETagField::GetFieldSize()
 {
-    CSmartPtr<char> spFieldNameANSI(CAPECharacterHelper::GetANSIFromUTF16(m_spFieldNameUTF16), true); 
+    CSmartPtr<char> spFieldNameANSI(CAPECharacterHelper::GetANSIFromUTF16(m_spFieldNameUTF16), true);
     return (int(strlen(spFieldNameANSI) + 1)) + m_nFieldValueBytes + 4 + 4;
 }
 
-const str_utfn * CAPETagField::GetFieldName()
+const char * CAPETagField::GetFieldName()
 {
     return m_spFieldNameUTF16;
 }
@@ -64,8 +65,8 @@ int CAPETagField::SaveField(char * pBuffer)
     pBuffer += 4;
     *((int *) pBuffer) = m_nFieldFlags;
     pBuffer += 4;
-    
-    CSmartPtr<char> spFieldNameANSI((char *) CAPECharacterHelper::GetANSIFromUTF16(m_spFieldNameUTF16), true); 
+
+    CSmartPtr<char> spFieldNameANSI((char *) CAPECharacterHelper::GetANSIFromUTF16(m_spFieldNameUTF16), true);
     strcpy(pBuffer, spFieldNameANSI);
     pBuffer += strlen(spFieldNameANSI) + 1;
 
@@ -77,27 +78,27 @@ int CAPETagField::SaveField(char * pBuffer)
 /*****************************************************************************************
 CAPETag
 *****************************************************************************************/
-const wchar_t * CAPETag::s_aryID3GenreNames[CAPETag::s_nID3GenreCount] =
-{ 
-	L"Blues", L"Classic Rock", L"Country", L"Dance", L"Disco", L"Funk", L"Grunge", L"Hip-Hop",
-	L"Jazz", L"Metal", L"New Age", L"Oldies", L"Other", L"Pop", L"R&B", L"Rap", L"Reggae", L"Rock", L"Techno",
-	L"Industrial", L"Alternative", L"Ska", L"Death Metal", L"Pranks", L"Soundtrack", L"Euro-Techno", L"Ambient",
-	L"Trip-Hop", L"Vocal", L"Jazz+Funk", L"Fusion", L"Trance", L"Classical", L"Instrumental", L"Acid", L"House", L"Game",
-	L"Sound Clip", L"Gospel", L"Noise", L"AlternRock", L"Bass", L"Soul", L"Punk", L"Space", L"Meditative", L"Instrumental Pop",
-	L"Instrumental Rock", L"Ethnic", L"Gothic", L"Darkwave", L"Techno-Industrial", L"Electronic", L"Pop-Folk", L"Eurodance",
-	L"Dream", L"Southern Rock", L"Comedy", L"Cult", L"Gangsta", L"Top 40", L"Christian Rap", L"Pop/Funk", L"Jungle",
-	L"Native American", L"Cabaret", L"New Wave", L"Psychedelic", L"Rave", L"Showtunes", L"Trailer", L"Lo-Fi", L"Tribal",
-	L"Acid Punk", L"Acid Jazz", L"Polka", L"Retro", L"Musical", L"Rock & Roll", L"Hard Rock", L"Folk", L"Folk-Rock", L"National Folk",
-	L"Swing", L"Fast Fusion", L"Bebop", L"Latin", L"Revival", L"Celtic", L"Bluegrass", L"Avantgarde", L"Gothic Rock", L"Progressive Rock",
-	L"Psychedelic Rock", L"Symphonic Rock", L"Slow Rock", L"Big Band", L"Chorus", L"Easy Listening", L"Acoustic", L"Humour",
-	L"Speech", L"Chanson", L"Opera", L"Chamber Music", L"Sonata", L"Symphony", L"Booty Bass", L"Primus", L"Porn Groove",
-	L"Satire", L"Slow Jam", L"Club", L"Tango", L"Samba", L"Folklore", L"Ballad", L"Power Ballad", L"Rhythmic Soul", L"Freestyle",
-	L"Duet", L"Punk Rock", L"Drum Solo", L"Acapella", L"Euro-House", L"Dance Hall", L"Goa", L"Drum & Bass", L"Club House", L"Hardcore",
-	L"Terror", L"Indie", L"BritPop", L"Black Punk", L"Polsk Punk", L"Beat", L"Christian Gangsta", L"Heavy Metal", L"Black Metal",
-	L"Crossover", L"Contemporary C", L"Christian Rock", L"Merengue", L"Salsa", L"Thrash Metal", L"Anime", L"JPop", L"SynthPop" 
+const char * CAPETag::s_aryID3GenreNames[CAPETag::s_nID3GenreCount] =
+{
+	"Blues", "Classic Rock", "Country", "Dance", "Disco", "Funk", "Grunge", "Hip-Hop",
+	"Jazz", "Metal", "New Age", "Oldies", "Other", "Pop", "R&B", "Rap", "Reggae", "Rock", "Techno",
+	"Industrial", "Alternative", "Ska", "Death Metal", "Pranks", "Soundtrack", "Euro-Techno", "Ambient",
+	"Trip-Hop", "Vocal", "Jazz+Funk", "Fusion", "Trance", "Classical", "Instrumental", "Acid", "House", "Game",
+	"Sound Clip", "Gospel", "Noise", "AlternRock", "Bass", "Soul", "Punk", "Space", "Meditative", "Instrumental Pop",
+	"Instrumental Rock", "Ethnic", "Gothic", "Darkwave", "Techno-Industrial", "Electronic", "Pop-Folk", "Eurodance",
+	"Dream", "Southern Rock", "Comedy", "Cult", "Gangsta", "Top 40", "Christian Rap", "Pop/Funk", "Jungle",
+	"Native American", "Cabaret", "New Wave", "Psychedelic", "Rave", "Showtunes", "Trailer", "Lo-Fi", "Tribal",
+	"Acid Punk", "Acid Jazz", "Polka", "Retro", "Musical", "Rock & Roll", "Hard Rock", "Folk", "Folk-Rock", "National Folk",
+	"Swing", "Fast Fusion", "Bebop", "Latin", "Revival", "Celtic", "Bluegrass", "Avantgarde", "Gothic Rock", "Progressive Rock",
+	"Psychedelic Rock", "Symphonic Rock", "Slow Rock", "Big Band", "Chorus", "Easy Listening", "Acoustic", "Humour",
+	"Speech", "Chanson", "Opera", "Chamber Music", "Sonata", "Symphony", "Booty Bass", "Primus", "Porn Groove",
+	"Satire", "Slow Jam", "Club", "Tango", "Samba", "Folklore", "Ballad", "Power Ballad", "Rhythmic Soul", "Freestyle",
+	"Duet", "Punk Rock", "Drum Solo", "Acapella", "Euro-House", "Dance Hall", "Goa", "Drum & Bass", "Club House", "Hardcore",
+	"Terror", "Indie", "BritPop", "Black Punk", "Polsk Punk", "Beat", "Christian Gangsta", "Heavy Metal", "Black Metal",
+	"Crossover", "Contemporary C", "Christian Rock", "Merengue", "Salsa", "Thrash Metal", "Anime", "JPop", "SynthPop"
 };
 
-CAPETag::CAPETag(const str_utfn * pFilename, bool bAnalyze)
+CAPETag::CAPETag(const char * pFilename, bool bAnalyze)
 {
     m_spIO.Assign(new IO_CLASS_NAME);
     m_spIO->Open(pFilename);
@@ -106,7 +107,7 @@ CAPETag::CAPETag(const str_utfn * pFilename, bool bAnalyze)
     m_nFields = 0;
     m_nTagBytes = 0;
     m_bIgnoreReadOnly = false;
-    
+
     if (bAnalyze)
         Analyze();
 }
@@ -117,7 +118,7 @@ CAPETag::CAPETag(CIO * pIO, bool bAnalyze)
     m_bAnalyzed = false;
     m_nFields = 0;
     m_nTagBytes = 0;
-    
+
     if (bAnalyze)
     {
         Analyze();
@@ -152,7 +153,7 @@ int CAPETag::Save(bool bUseOldID3)
 {
     if (Remove(false) != ERROR_SUCCESS)
         return -1;
-    
+
     if (m_nFields == 0) { return ERROR_SUCCESS; }
 
     int nResult = -1;
@@ -202,12 +203,12 @@ int CAPETag::Save(bool bUseOldID3)
 int CAPETag::WriteBufferToEndOfIO(void * pBuffer, int nBytes)
 {
     int nOriginalPosition = m_spIO->GetPosition();
-    
+
     unsigned int nBytesWritten = 0;
     m_spIO->Seek(0, FILE_END);
 
     int nResult = m_spIO->Write(pBuffer, nBytes, &nBytesWritten);
-    
+
     m_spIO->Seek(nOriginalPosition, FILE_BEGIN);
 
     return nResult;
@@ -224,7 +225,7 @@ int CAPETag::Analyze()
 
     // store the original location
     int nOriginalPosition = m_spIO->GetPosition();
-    
+
     // check for a tag
     m_bHasID3Tag = false;
     m_bHasAPETag = false;
@@ -237,14 +238,14 @@ int CAPETag::Analyze()
         int nReadRetVal = m_spIO->Read((unsigned char *) &ID3Tag, sizeof(ID3_TAG), &nBytesRead);
         if ((nBytesRead == sizeof(ID3_TAG)) && (nReadRetVal == 0))
         {
-            if (ID3Tag.Header[0] == 'T' && ID3Tag.Header[1] == 'A' && ID3Tag.Header[2] == 'G') 
+            if (ID3Tag.Header[0] == 'T' && ID3Tag.Header[1] == 'A' && ID3Tag.Header[2] == 'G')
             {
                 m_bHasID3Tag = true;
                 m_nTagBytes += ID3_TAG_BYTES;
             }
         }
     }
-    
+
     // set the fields
     if (m_bHasID3Tag)
     {
@@ -253,13 +254,13 @@ int CAPETag::Analyze()
         SetFieldID3String(APE_TAG_FIELD_TITLE, ID3Tag.Title, 30);
         SetFieldID3String(APE_TAG_FIELD_COMMENT, ID3Tag.Comment, 28);
         SetFieldID3String(APE_TAG_FIELD_YEAR, ID3Tag.Year, 4);
-        
+
         char cTemp[16]; sprintf(cTemp, "%d", ID3Tag.Track);
         SetFieldString(APE_TAG_FIELD_TRACK, cTemp, false);
 
-        if ((ID3Tag.Genre == CAPETag::s_nID3GenreUndefined) || (ID3Tag.Genre >= CAPETag::s_nID3GenreCount)) 
+        if ((ID3Tag.Genre == CAPETag::s_nID3GenreUndefined) || (ID3Tag.Genre >= CAPETag::s_nID3GenreCount))
             SetFieldString(APE_TAG_FIELD_GENRE, APE_TAG_GENRE_UNDEFINED);
-        else 
+        else
             SetFieldString(APE_TAG_FIELD_GENRE, CAPETag::s_aryID3GenreNames[ID3Tag.Genre]);
     }
 
@@ -280,7 +281,7 @@ int CAPETag::Analyze()
 
                     int nRawFieldBytes = APETagFooter.GetFieldBytes();
                     m_nTagBytes += APETagFooter.GetTotalTagBytes();
-                    
+
                     CSmartPtr<char> spRawTag(new char [nRawFieldBytes], true);
                     if (m_spIO->Seek(-(APETagFooter.GetTotalTagBytes() - APETagFooter.GetFieldsOffset()), FILE_END) == ERROR_SUCCESS)
                     {
@@ -293,7 +294,7 @@ int CAPETag::Analyze()
                             for (int z = 0; z < APETagFooter.GetNumberFields(); z++)
                             {
                                 int nMaximumFieldBytes = nRawFieldBytes - nLocation;
-                                
+
                                 int nBytes = 0;
                                 if (LoadField(&spRawTag[nLocation], nMaximumFieldBytes, &nBytes) != ERROR_SUCCESS)
                                 {
@@ -312,7 +313,7 @@ int CAPETag::Analyze()
 
     // restore the file pointer
     m_spIO->Seek(nOriginalPosition, FILE_BEGIN);
-    
+
     return ERROR_SUCCESS;
 }
 
@@ -322,13 +323,13 @@ int CAPETag::ClearFields()
     {
         SAFE_DELETE(m_aryFields[z])
     }
-    
+
     m_nFields = 0;
 
     return ERROR_SUCCESS;
 }
 
-int CAPETag::GetTagFieldIndex(const str_utfn * pFieldName)
+int CAPETag::GetTagFieldIndex(const char * pFieldName)
 {
     if (!m_bAnalyzed) { Analyze(); }
     if (pFieldName == NULL) return -1;
@@ -343,25 +344,25 @@ int CAPETag::GetTagFieldIndex(const str_utfn * pFieldName)
 
 }
 
-CAPETagField * CAPETag::GetTagField(const str_utfn * pFieldName)
+CAPETagField * CAPETag::GetTagField(const char * pFieldName)
 {
     int nIndex = GetTagFieldIndex(pFieldName);
     return (nIndex != -1) ? m_aryFields[nIndex] : NULL;
 }
 
-int CAPETag::GetFieldString(const str_utfn * pFieldName, str_ansi * pBuffer, int * pBufferCharacters, bool bUTF8Encode)
+int CAPETag::GetFieldString(const char * pFieldName, char * pBuffer, int * pBufferCharacters, bool bUTF8Encode)
 {
     int nOriginalCharacters = *pBufferCharacters;
-    str_utfn * pUTF16 = new str_utfn [*pBufferCharacters + 1];
+    char * pUTF16 = new char [*pBufferCharacters + 1];
     pUTF16[0] = 0;
 
     int nResult = GetFieldString(pFieldName, pUTF16, pBufferCharacters);
     if (nResult == ERROR_SUCCESS)
     {
-        CSmartPtr<str_ansi> spANSI(bUTF8Encode ? (str_ansi *) CAPECharacterHelper::GetUTF8FromUTF16(pUTF16) : CAPECharacterHelper::GetANSIFromUTF16(pUTF16), true);
+        CSmartPtr<char> spANSI(bUTF8Encode ? (char *) CAPECharacterHelper::GetUTF8FromUTF16(pUTF16) : CAPECharacterHelper::GetANSIFromUTF16(pUTF16), true);
         if (int(strlen(spANSI)) > nOriginalCharacters)
         {
-            memset(pBuffer, 0, nOriginalCharacters * sizeof(str_ansi));
+            memset(pBuffer, 0, nOriginalCharacters * sizeof(char));
             *pBufferCharacters = 0;
             nResult = ERROR_UNDEFINED;
         }
@@ -371,14 +372,14 @@ int CAPETag::GetFieldString(const str_utfn * pFieldName, str_ansi * pBuffer, int
             *pBufferCharacters = (int) strlen(spANSI);
         }
     }
-    
+
     delete [] pUTF16;
 
     return nResult;
 }
 
 
-int CAPETag::GetFieldString(const str_utfn * pFieldName, str_utfn * pBuffer, int * pBufferCharacters, const str_utfn * pListDelimiter)
+int CAPETag::GetFieldString(const char * pFieldName, char * pBuffer, int * pBufferCharacters, const char * pListDelimiter)
 {
     if (!m_bAnalyzed) { Analyze(); }
 
@@ -394,7 +395,7 @@ int CAPETag::GetFieldString(const str_utfn * pFieldName, str_utfn * pBuffer, int
         if (pAPETagField == NULL)
         {
             // the field doesn't exist -- return an empty string
-            memset(pBuffer, 0, *pBufferCharacters * sizeof(str_utfn));
+            memset(pBuffer, 0, *pBufferCharacters * sizeof(char));
             *pBufferCharacters = 0;
         }
         else if (pAPETagField->GetIsUTF8Text() || (m_nAPETagVersion < 2000))
@@ -409,7 +410,7 @@ int CAPETag::GetFieldString(const str_utfn * pFieldName, str_utfn * pBuffer, int
             while (nListItemStartIndex < pAPETagField->GetFieldValueSize())
             {
                 // get the value in UTF-16 format
-                CSmartPtr<str_utfn> spUTF16;
+                CSmartPtr<char> spUTF16;
                 if (m_nAPETagVersion >= 2000)
                     spUTF16.Assign(CAPECharacterHelper::GetUTF16FromUTF8((str_utf8 *) &pAPETagField->GetFieldValue()[nListItemStartIndex]), true);
                 else
@@ -428,7 +429,7 @@ int CAPETag::GetFieldString(const str_utfn * pFieldName, str_utfn * pBuffer, int
                 else
                 {
                     // copy list item to output
-                    
+
                     // delimiter
                     if (pBuffer[0] != 0)
                     {
@@ -461,22 +462,22 @@ int CAPETag::GetFieldString(const str_utfn * pFieldName, str_utfn * pBuffer, int
         else
         {
             // memset the whole buffer to NULL (so everything left over is NULL terminated)
-            memset(pBuffer, 0, *pBufferCharacters * sizeof(str_utfn));
+            memset(pBuffer, 0, *pBufferCharacters * sizeof(char));
 
             // do a binary dump (need to convert from wchar's to bytes)
-            int nBufferBytes = (*pBufferCharacters - 1) * sizeof(str_utfn);
+            int nBufferBytes = (*pBufferCharacters - 1) * sizeof(char);
             nResult = GetFieldBinary(pFieldName, pBuffer, &nBufferBytes);
-            *pBufferCharacters = (nBufferBytes / sizeof(str_utfn)) + 1;
+            *pBufferCharacters = (nBufferBytes / sizeof(char)) + 1;
         }
     }
 
     return nResult;
 }
 
-int CAPETag::GetFieldBinary(const str_utfn * pFieldName, void * pBuffer, int * pBufferBytes)
+int CAPETag::GetFieldBinary(const char * pFieldName, void * pBuffer, int * pBufferBytes)
 {
     if (!m_bAnalyzed) { Analyze(); }
-    
+
     int nResult = ERROR_UNDEFINED;
 
     if (*pBufferBytes > 0)
@@ -510,7 +511,7 @@ int CAPETag::GetFieldBinary(const str_utfn * pFieldName, void * pBuffer, int * p
 
 int CAPETag::CreateID3Tag(ID3_TAG * pID3Tag)
 {
-    // error check 
+    // error check
     if (pID3Tag == NULL) { return -1; }
     if (!m_bAnalyzed) { Analyze(); }
     if (m_nFields == 0) { return -1; }
@@ -520,7 +521,7 @@ int CAPETag::CreateID3Tag(ID3_TAG * pID3Tag)
 
     // header
     pID3Tag->Header[0] = 'T'; pID3Tag->Header[1] = 'A'; pID3Tag->Header[2] = 'G';
-    
+
     // standard fields
     GetFieldID3String(APE_TAG_FIELD_ARTIST, pID3Tag->Artist, 30);
     GetFieldID3String(APE_TAG_FIELD_ALBUM, pID3Tag->Album, 30);
@@ -529,14 +530,14 @@ int CAPETag::CreateID3Tag(ID3_TAG * pID3Tag)
     GetFieldID3String(APE_TAG_FIELD_YEAR, pID3Tag->Year, 4);
 
     // track number
-    str_utfn cBuffer[256] = { 0 }; int nBufferCharacters = 255;
+    char cBuffer[256] = { 0 }; int nBufferCharacters = 255;
     GetFieldString(APE_TAG_FIELD_TRACK, cBuffer, &nBufferCharacters);
     pID3Tag->Track = (unsigned char) _wtoi(cBuffer);
-    
+
     // genre
     cBuffer[0] = 0; nBufferCharacters = 255;
     GetFieldString(APE_TAG_FIELD_GENRE, cBuffer, &nBufferCharacters);
-        
+
     // convert the genre string to an index
     pID3Tag->Genre = 255;
     int nGenreIndex = 0;
@@ -548,7 +549,7 @@ int CAPETag::CreateID3Tag(ID3_TAG * pID3Tag)
             pID3Tag->Genre = nGenreIndex;
             bFound = true;
         }
-        
+
         nGenreIndex++;
     }
 
@@ -568,7 +569,7 @@ int CAPETag::LoadField(const char * pBuffer, int nMaximumBytes, int * pBytes)
     nLocation += 4;
     int nFieldFlags = *((int *) &pBuffer[nLocation]);
     nLocation += 4;
-    
+
     // safety check (so we can't get buffer overflow attacked)
     bool bSafe = false;
     int nMaximumRead = nMaximumBytes - 8 - nFieldValueSize;
@@ -592,7 +593,7 @@ int CAPETag::LoadField(const char * pBuffer, int nMaximumBytes, int * pBytes)
     CSmartPtr<str_utf8> spNameUTF8(new str_utf8 [nNameCharacters + 1], true);
     memcpy(spNameUTF8, &pBuffer[nLocation], (nNameCharacters + 1) * sizeof(str_utf8));
     nLocation += nNameCharacters + 1;
-    CSmartPtr<str_utfn> spNameUTF16(CAPECharacterHelper::GetUTF16FromUTF8(spNameUTF8.GetPtr()), true);
+    CSmartPtr<char> spNameUTF16(CAPECharacterHelper::GetUTF16FromUTF8(spNameUTF8.GetPtr()), true);
 
     // value
     CSmartPtr<char> spFieldBuffer(new char [nFieldValueSize], true);
@@ -606,18 +607,18 @@ int CAPETag::LoadField(const char * pBuffer, int nMaximumBytes, int * pBytes)
     return SetFieldBinary(spNameUTF16.GetPtr(), spFieldBuffer, nFieldValueSize, nFieldFlags);
 }
 
-int CAPETag::SetFieldString(const str_utfn * pFieldName, const str_utfn * pFieldValue, const str_utfn * pListDelimiter)
+int CAPETag::SetFieldString(const char * pFieldName, const char * pFieldValue, const char * pListDelimiter)
 {
     // remove if empty
     if ((pFieldValue == NULL) || (wcslen(pFieldValue) <= 0))
         return RemoveField(pFieldName);
 
     // UTF-8 encode the value and call the UTF-8 SetField(...)
-    CSmartPtr<str_utf8> spFieldValueUTF8(CAPECharacterHelper::GetUTF8FromUTF16((str_utfn *) pFieldValue), true);
+    CSmartPtr<str_utf8> spFieldValueUTF8(CAPECharacterHelper::GetUTF8FromUTF16((char *) pFieldValue), true);
     return SetFieldString(pFieldName, (const char *) spFieldValueUTF8.GetPtr(), true, pListDelimiter);
 }
 
-int CAPETag::SetFieldString(const str_utfn * pFieldName, const char * pFieldValue, bool bAlreadyUTF8Encoded, const str_utfn * pListDelimiter)
+int CAPETag::SetFieldString(const char * pFieldName, const char * pFieldValue, bool bAlreadyUTF8Encoded, const char * pListDelimiter)
 {
     // remove if empty
     if ((pFieldValue == NULL) || (strlen(pFieldValue) <= 0))
@@ -626,7 +627,7 @@ int CAPETag::SetFieldString(const str_utfn * pFieldName, const char * pFieldValu
     if (pListDelimiter != NULL)
     {
         // convert from a caller-specified delimiter to NULL delimiting for use in the tag
-        
+
         // build UTF-8 string
         CSmartPtr<char> spValueUTF8;
         if (bAlreadyUTF8Encoded)
@@ -678,7 +679,7 @@ int CAPETag::SetFieldString(const str_utfn * pFieldName, const char * pFieldValu
     }
 }
 
-int CAPETag::SetFieldBinary(const str_utfn * pFieldName, const void * pFieldValue, intn nFieldBytes, int nFieldFlags)
+int CAPETag::SetFieldBinary(const char * pFieldName, const void * pFieldValue, intn nFieldBytes, int nFieldFlags)
 {
     if (!m_bAnalyzed) { Analyze(); }
     if (pFieldName == NULL) return -1;
@@ -695,7 +696,7 @@ int CAPETag::SetFieldBinary(const str_utfn * pFieldName, const void * pFieldValu
         // fail if we're read-only (and not ignoring the read-only flag)
         if (!m_bIgnoreReadOnly && (m_aryFields[nFieldIndex]->GetIsReadOnly()))
             return -1;
-        
+
         // erase the existing field
         SAFE_DELETE(m_aryFields[nFieldIndex])
 
@@ -712,7 +713,7 @@ int CAPETag::SetFieldBinary(const str_utfn * pFieldName, const void * pFieldValu
         nFieldIndex = m_nFields;
         m_nFields++;
     }
-    
+
     // create the field and add it to the field array
     m_aryFields[nFieldIndex] = new CAPETagField(pFieldName, pFieldValue, (int) nFieldBytes, nFieldFlags);
 
@@ -732,7 +733,7 @@ int CAPETag::RemoveField(int nIndex)
     return -1;
 }
 
-int CAPETag::RemoveField(const str_utfn * pFieldName)
+int CAPETag::RemoveField(const char * pFieldName)
 {
     return RemoveField(GetTagFieldIndex(pFieldName));
 }
@@ -795,7 +796,7 @@ int CAPETag::Remove(bool bUpdate)
         }
 
     }
-    
+
     m_spIO->Seek(nOriginalPosition, FILE_BEGIN);
 
     if (bUpdate && !bFailedToRemove)
@@ -806,31 +807,31 @@ int CAPETag::Remove(bool bUpdate)
     return bFailedToRemove ? -1 : 0;
 }
 
-int CAPETag::SetFieldID3String(const str_utfn * pFieldName, const char * pFieldValue, int nBytes)
+int CAPETag::SetFieldID3String(const char * pFieldName, const char * pFieldValue, int nBytes)
 {
     // allocate a buffer and terminate it
-    CSmartPtr<str_ansi> spBuffer(new str_ansi [nBytes + 1], true);
+    CSmartPtr<char> spBuffer(new char [nBytes + 1], true);
     spBuffer[nBytes] = 0;
-    
+
     // make a capped copy of the string
     memcpy(spBuffer.GetPtr(), pFieldValue, nBytes);
-    
+
     // remove trailing white-space
     char * pEnd = &spBuffer[nBytes];
     while (((*pEnd == ' ') || (*pEnd == 0)) && pEnd >= &spBuffer[0]) { *pEnd-- = 0; }
 
     // set the field
     SetFieldString(pFieldName, spBuffer, false);
-    
+
     return ERROR_SUCCESS;
 }
 
-int CAPETag::GetFieldID3String(const str_utfn * pFieldName, char * pBuffer, int nBytes)
+int CAPETag::GetFieldID3String(const char * pFieldName, char * pBuffer, int nBytes)
 {
-    int nBufferCharacters = 255; str_utfn cBuffer[256] = {0};
+    int nBufferCharacters = 255; char cBuffer[256] = {0};
     GetFieldString(pFieldName, cBuffer, &nBufferCharacters);
 
-    CSmartPtr<str_ansi> spBufferANSI(CAPECharacterHelper::GetANSIFromUTF16(cBuffer), true);
+    CSmartPtr<char> spBufferANSI(CAPECharacterHelper::GetANSIFromUTF16(cBuffer), true);
 
     memset(pBuffer, 0, nBytes);
     strncpy(pBuffer, spBufferANSI.GetPtr(), nBytes);

@@ -11,6 +11,8 @@
 #ifdef APE_BACKWARDS_COMPATIBILITY
 	#include "Old/APEDecompressOld.h"
 #endif
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
 
 using namespace APE;
 
@@ -21,7 +23,7 @@ IAPEDecompress * CreateIAPEDecompressCore(CAPEInfo * pAPEInfo, int nStartBlock, 
 
     // proceed if we have an info object
     if (pAPEInfo != NULL)
-    {    
+    {
         // proceed if there's no error with the info object
         if (*pErrorCode == ERROR_SUCCESS)
         {
@@ -58,10 +60,10 @@ IAPEDecompress * CreateIAPEDecompressCore(CAPEInfo * pAPEInfo, int nStartBlock, 
     return pAPEDecompress;
 }
 
-IAPEDecompress * __stdcall CreateIAPEDecompress(const str_utfn * pFilename, int * pErrorCode)
+IAPEDecompress * __stdcall CreateIAPEDecompress(const char * pFilename, int * pErrorCode)
 {
     // error check the parameters
-    if ((pFilename == NULL) || (wcslen(pFilename) == 0))
+    if ((pFilename == NULL) || (strlen(pFilename) == 0))
     {
         if (pErrorCode) *pErrorCode = ERROR_BAD_PARAMETER;
         return NULL;
@@ -73,12 +75,11 @@ IAPEDecompress * __stdcall CreateIAPEDecompress(const str_utfn * pFilename, int 
     int nStartBlock = -1; int nFinishBlock = -1;
 
     // get the extension
-    const str_utfn * pExtension = &pFilename[wcslen(pFilename)];
-    while ((pExtension > pFilename) && (*pExtension != '.'))
-        pExtension--;
+    namespace fs = boost::filesystem;
+    std::string pExtension = fs::extension(pFilename);
 
     // take the appropriate action (based on the extension)
-    if (StringIsEqual(pExtension, L".apl", false))
+    if (boost::algorithm::iequals(pExtension, ".apl"))
     {
         // "link" file (.apl linked large APE file)
         CAPELink APELink(pFilename);
@@ -88,7 +89,8 @@ IAPEDecompress * __stdcall CreateIAPEDecompress(const str_utfn * pFilename, int 
             nStartBlock = APELink.GetStartBlock(); nFinishBlock = APELink.GetFinishBlock();
         }
     }
-    else if (StringIsEqual(pExtension, L".mac", false) || StringIsEqual(pExtension, L".ape", false))
+    else if (boost::algorithm::iequals(pExtension, ".mac")
+            or boost::algorithm::iequals(pExtension, ".ape"))
     {
         // plain .ape file
         pAPEInfo = new CAPEInfo(&nErrorCode, pFilename);
@@ -111,7 +113,7 @@ IAPEDecompress * __stdcall CreateIAPEDecompress(const str_utfn * pFilename, int 
 
 IAPEDecompress * __stdcall CreateIAPEDecompressEx(CIO * pIO, int * pErrorCode)
 {
-    // create info 
+    // create info
     int nErrorCode = ERROR_UNDEFINED;
     CAPEInfo * pAPEInfo = new CAPEInfo(&nErrorCode, pIO);
 
@@ -164,7 +166,7 @@ int __stdcall FillWaveHeader(WAVE_HEADER * pWAVHeader, APE::intn nAudioBytes, AP
         // format header
         memcpy(pWAVHeader->cDataTypeID, "WAVE", 4);
         memcpy(pWAVHeader->cFormatHeader, "fmt ", 4);
-        
+
         // the format chunk is the first 16 bytes of a waveformatex
         pWAVHeader->nFormatBytes = 16;
         memcpy(&pWAVHeader->nFormatTag, pWaveFormatEx, 16);

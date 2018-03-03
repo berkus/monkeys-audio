@@ -75,7 +75,7 @@ class CAPEInfo
 public:
     
     // construction and destruction
-    CAPEInfo(int * pErrorCode, const wchar_t * pFilename, CAPETag * pTag = NULL);
+    CAPEInfo(int * pErrorCode, std::string pFilename, CAPETag * pTag = NULL);
     CAPEInfo(int * pErrorCode, APE::CIO * pIO, CAPETag * pTag = NULL);
     virtual ~CAPEInfo();
 

@@ -114,12 +114,6 @@ namespace APE
 	typedef int16_t                                     int16;
 	typedef uint8_t                                     uint8;
 	typedef int8_t                                      int8;
-
-	// string types
-	typedef char                                        str_ansi;
-	typedef unsigned char                               str_utf8;
-	typedef int16										str_utf16;
-	typedef wchar_t                                     str_utfn; // could be UTF-16 or UTF-32 depending on platform
 }
 
 /*****************************************************************************************

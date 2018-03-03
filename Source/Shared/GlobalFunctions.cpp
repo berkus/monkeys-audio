@@ -2,9 +2,9 @@
 #include "GlobalFunctions.h"
 #include "IO.h"
 #include "CharacterHelper.h"
-#ifdef _MSC_VER
-    #include <intrin.h>
-#endif
+#include <string>
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace APE
 {
@@ -35,40 +35,14 @@ intn WriteSafe(CIO * pIO, void * pBuffer, intn nBytes)
     return nResult;
 }
 
-bool FileExists(wchar_t * pFilename)
-{    
-    if (0 == wcscmp(pFilename, L"-")  ||  0 == wcscmp(pFilename, L"/dev/stdin"))
+bool FileExists(std::string pFilename)
+{
+    using namespace std::string_literals;
+
+    if (pFilename == "-"s or pFilename == "/dev/stdin"s)
         return true;
 
-#ifdef _WIN32
-
-    bool bFound = false;
-
-    WIN32_FIND_DATA WFD;
-    HANDLE hFind = FindFirstFile(pFilename, &WFD);
-    if (hFind != INVALID_HANDLE_VALUE)
-    {
-        bFound = true;
-        FindClose(hFind);
-    }
-
-    return bFound;
-
-#else
-
-    CSmartPtr<char> spFilenameUTF8((char *) CAPECharacterHelper::GetUTF8FromUTF16(pFilename), true);
-
-    struct stat b;
-
-    if (stat(spFilenameUTF8, &b) != 0)
-        return false;
-
-    if (!S_ISREG(b.st_mode))
-        return false;
-
-    return true;
-
-#endif
+    return boost::filesystem::exists(pFilename);
 }
 
 void * AllocateAligned(intn nBytes, intn nAlignment)
@@ -139,39 +113,19 @@ bool GetSSEAvailable()
 #endif
 }
 
-bool StringIsEqual(const str_utfn * pString1, const str_utfn * pString2, bool bCaseSensitive, int nCharacters)
+bool StringIsEqual(const char * pString1, const char * pString2, bool bCaseSensitive, int nCharacters)
 {
-	// wcscasecmp isn't available on OSX 10.6 and sometimes it's hard to find other string comparisons that work reliably on different
-	// platforms, so we'll just roll our own simple version here (performance of this function isn't critical to APE performance)
-
-	// default to 'true' so that comparing two empty strings will be a match
-	bool bResult = true;
-
-	// if -1 is passed in, compare the entire string
-	if (nCharacters == -1)
-		nCharacters = 0x7FFFFFFF;
-
-	if (nCharacters > 0)
-	{
-		// walk string
-		str_utfn f, l;
-		do
-		{
-			f = *pString1++;
-			l = *pString2++;
-			if (!bCaseSensitive)
-			{
-				f = _totlower(f);
-				l = _totlower(l);
-			}
-		}
-		while ((--nCharacters) && (f != 0) && (f == l));
-
-		// if we're still equal, it's a match
-		bResult = (f == l);
-	}
-
-	return bResult;
+    if (nCharacters != -1) {
+        if (bCaseSensitive)
+            return strncmp(pString1, pString2, nCharacters) == 0;
+        else
+            return strncasecmp(pString1, pString2, nCharacters) == 0;
+    } else {
+        if (bCaseSensitive)
+            return boost::algorithm::equals(pString1, pString2);
+        else
+            return boost::algorithm::iequals(pString1, pString2);
+    }
 }
 
 }

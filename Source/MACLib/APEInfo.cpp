@@ -8,6 +8,8 @@ CAPEInfo:
 #include "APECompress.h"
 #include "APEHeader.h"
 #include "GlobalFunctions.h"
+#include <iostream>
+#include <boost/algorithm/string.hpp>
 
 namespace APE
 {
@@ -15,7 +17,7 @@ namespace APE
 /*****************************************************************************************
 Construction
 *****************************************************************************************/
-CAPEInfo::CAPEInfo(int * pErrorCode, const wchar_t * pFilename, CAPETag * pTag) 
+CAPEInfo::CAPEInfo(int * pErrorCode, std::string pFilename, CAPETag * pTag)
 {
     *pErrorCode = ERROR_SUCCESS;
     CloseFile();
